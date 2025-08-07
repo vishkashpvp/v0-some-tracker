@@ -115,7 +115,7 @@ export default function FrontendTracker() {
 
   const fetchSession = async () => {
     try {
-      const response = await fetch("/api/auth/session")
+      const response = await fetch("/api/auth/session", { cache: 'no-store' })
       if (response.ok) {
         const data = await response.json()
         setSession(data.user)
@@ -127,7 +127,7 @@ export default function FrontendTracker() {
 
   const fetchTasks = async () => {
     try {
-      const response = await fetch("/api/tasks")
+      const response = await fetch("/api/tasks", { cache: 'no-store' })
 
       if (response.status === 401) {
         router.push("/login")
@@ -154,7 +154,7 @@ export default function FrontendTracker() {
 
       if (session?.role === 'admin') {
         // Fetch pending tasks
-        const pendingResponse = await fetch("/api/tasks/pending")
+        const pendingResponse = await fetch("/api/tasks/pending", { cache: 'no-store' })
         const pendingContentType = pendingResponse.headers.get("content-type")
         if (!pendingContentType || !pendingContentType.includes("application/json")) {
           const errorText = await pendingResponse.text()
@@ -168,7 +168,7 @@ export default function FrontendTracker() {
         }
 
         // Fetch deletion requests
-        const deletionResponse = await fetch("/api/tasks/deletion-requests")
+        const deletionResponse = await fetch("/api/tasks/deletion-requests", { cache: 'no-store' })
         const deletionContentType = deletionResponse.headers.get("content-type")
         if (!deletionContentType || !deletionContentType.includes("application/json")) {
           const errorText = await deletionResponse.text()
@@ -182,7 +182,7 @@ export default function FrontendTracker() {
         }
 
         // Fetch deleted tasks
-        const deletedResponse = await fetch("/api/tasks/deleted")
+        const deletedResponse = await fetch("/api/tasks/deleted", { cache: 'no-store' })
         const deletedContentType = deletedResponse.headers.get("content-type")
         if (!deletedContentType || !deletedContentType.includes("application/json")) {
           const errorText = await deletedResponse.text()
@@ -196,7 +196,7 @@ export default function FrontendTracker() {
         }
 
         // Fetch completed tasks
-        const completedResponse = await fetch("/api/tasks/completed")
+        const completedResponse = await fetch("/api/tasks/completed", { cache: 'no-store' })
         const completedContentType = completedResponse.headers.get("content-type")
         if (!completedContentType || !completedContentType.includes("application/json")) {
           const errorText = await completedResponse.text()
@@ -266,6 +266,7 @@ export default function FrontendTracker() {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
+        cache: 'no-store' // Ensure fresh data after update
       })
 
       if (!response.ok) {
@@ -275,10 +276,8 @@ export default function FrontendTracker() {
 
       const updatedTask = await response.json()
       setTasks(tasks.map((task) => (task.id === taskId ? updatedTask : task)))
-      // If task status changed to completed, refresh completed tasks list
-      if (newStatus === 'completed') {
-        fetchTasks(); // Re-fetch all to update counts and lists
-      }
+      // Always re-fetch all data after a status update to ensure all tabs are consistent
+      fetchTasks(); 
     } catch (error: any) {
       setError(error.message || "Failed to update task")
       console.error("Error updating task:", error)
@@ -292,20 +291,15 @@ export default function FrontendTracker() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(newTask),
+        cache: 'no-store' // Ensure fresh data after creation
       })
 
       if (!response.ok) throw new Error("Failed to create task")
 
       const createdTask = await response.json()
       
-      // If user is admin, add to tasks list immediately
-      // If user is regular user, the task will be pending and won't show in main list
-      if (session?.role === 'admin') {
-        setTasks([createdTask, ...tasks])
-      } else {
-        // For regular users, show a success message
-        alert("Task submitted for admin approval!")
-      }
+      // Always refresh data to update all lists (main, pending, etc.)
+      fetchTasks()
       
       setIsAddTaskOpen(false)
       setNewTask({
@@ -316,9 +310,9 @@ export default function FrontendTracker() {
         dueDate: "",
       })
       
-      // Refresh data to update pending tasks count for admin
-      if (session?.role === 'admin') {
-        fetchTasks()
+      // Show success message for regular users
+      if (session?.role !== 'admin') {
+        alert("Task submitted for admin approval!")
       }
     } catch (error) {
       setError("Failed to create task")
@@ -340,6 +334,7 @@ export default function FrontendTracker() {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ pin: deletePin }),
+        cache: 'no-store' // Ensure fresh data after deletion
       })
 
       const result = await response.json()
@@ -354,8 +349,8 @@ export default function FrontendTracker() {
       }
 
       // Update state to reflect soft deletion
-      setTasks(tasks.map(task => ({ ...task, is_deleted: true, deleted_at: new Date().toISOString() })));
-      setDeletedTasks([...tasks.map(task => ({ ...task, is_deleted: true, deleted_at: new Date().toISOString() })), ...deletedTasks]);
+      // Re-fetch all data to ensure consistency across tabs
+      fetchTasks();
       
       setIsDeleteAllOpen(false)
       setDeletePin("")
@@ -375,15 +370,19 @@ export default function FrontendTracker() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ taskId, action }),
+        cache: 'no-store' // Ensure fresh data after approval
       })
 
-      if (!response.ok) throw new Error("Failed to process approval")
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to process approval");
+      }
 
       // Refresh data
       fetchTasks()
       
       setError("")
-    } catch (error) {
+    } catch (error: any) {
       setError(`Failed to ${action} task`)
       console.error(`Error ${action}ing task:`, error)
     }
@@ -395,6 +394,7 @@ export default function FrontendTracker() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ taskId, reason }),
+        cache: 'no-store' // Ensure fresh data after request
       })
 
       if (!response.ok) {
@@ -408,10 +408,8 @@ export default function FrontendTracker() {
       // Show success message
       alert(result.message)
       
-      // Refresh data if admin
-      if (session?.role === 'admin') {
-        fetchTasks()
-      }
+      // Always refresh data to update deletion requests count for admin
+      fetchTasks()
     } catch (error: any) {
       setError(error.message || "Failed to create deletion request")
       console.error("Error creating deletion request:", error)
@@ -424,6 +422,7 @@ export default function FrontendTracker() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action }),
+        cache: 'no-store' // Ensure fresh data after approval
       })
 
       if (!response.ok) {
