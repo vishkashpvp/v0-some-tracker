@@ -23,10 +23,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(result[0])
     } else if (action === 'reject') {
       const result = await sql`
-        DELETE FROM tasks WHERE id = ${taskId}
+        UPDATE tasks
+        SET is_deleted = TRUE, deleted_at = CURRENT_TIMESTAMP
+        WHERE id = ${taskId}
         RETURNING *
       `
-      return NextResponse.json({ success: true, message: "Task rejected and deleted" })
+      return NextResponse.json(result[0])
     }
 
     return NextResponse.json({ error: "Invalid action" }, { status: 400 })

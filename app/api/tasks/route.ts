@@ -11,24 +11,26 @@ export async function GET() {
 
     let tasks
     if (session.role === 'admin') {
-      // Admin sees only approved tasks in main list
+      // Admin sees only approved and non-deleted tasks in main list
       tasks = await sql`
         SELECT id, title, description, status, priority, category, 
                estimated_hours, actual_hours, due_date, created_at, 
-               updated_at, approval_status, requested_by, approved_by, approved_at
+               updated_at, approval_status, requested_by, approved_by, approved_at,
+               is_deleted, deleted_at
         FROM tasks 
-        WHERE approval_status = 'approved'
+        WHERE approval_status = 'approved' AND is_deleted = FALSE
         ORDER BY created_at DESC
       `
     } else {
-      // Users see approved tasks and their own pending tasks
+      // Users see approved and non-deleted tasks, and their own pending tasks
       tasks = await sql`
         SELECT id, title, description, status, priority, category, 
                estimated_hours, actual_hours, due_date, created_at, 
-               updated_at, approval_status, requested_by, approved_by, approved_at
+               updated_at, approval_status, requested_by, approved_by, approved_at,
+               is_deleted, deleted_at
         FROM tasks 
-        WHERE approval_status = 'approved' 
-           OR (approval_status = 'pending' AND requested_by = ${session.username})
+        WHERE (approval_status = 'approved' AND is_deleted = FALSE)
+           OR (approval_status = 'pending' AND requested_by = ${session.username} AND is_deleted = FALSE)
         ORDER BY created_at DESC
       `
     }
@@ -63,16 +65,17 @@ export async function POST(request: NextRequest) {
       INSERT INTO tasks (
         title, description, priority, category, 
         estimated_hours, due_date, approval_status, requested_by,
-        approved_by, approved_at, status, actual_hours
+        approved_by, approved_at, status, actual_hours, is_deleted
       )
       VALUES (
         ${title}, ${description}, ${priority}, ${category}, 
         ${estimatedHours || 0}, ${dueDate || null}, ${approvalStatus}, ${session.username},
-        ${approvedBy}, ${approvedAt}, 'todo', 0
+        ${approvedBy}, ${approvedAt}, 'todo', 0, FALSE
       )
       RETURNING id, title, description, status, priority, category, 
-             estimated_hours, actual_hours, due_date, created_at, 
-             updated_at, approval_status, requested_by, approved_by, approved_at
+           estimated_hours, actual_hours, due_date, created_at, 
+           updated_at, approval_status, requested_by, approved_by, approved_at,
+           is_deleted, deleted_at
     `
 
     return NextResponse.json(result[0])

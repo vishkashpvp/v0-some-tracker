@@ -44,7 +44,9 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     const taskId = Number.parseInt(params.id)
 
     const result = await sql`
-      DELETE FROM tasks WHERE id = ${taskId}
+      UPDATE tasks
+      SET is_deleted = TRUE, deleted_at = CURRENT_TIMESTAMP
+      WHERE id = ${taskId}
       RETURNING id
     `
 

@@ -24,8 +24,8 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
 
       const taskId = requestData[0].task_id
 
-      // Delete the task and update the request
-      await sql`DELETE FROM tasks WHERE id = ${taskId}`
+      // Soft delete the task and update the request
+      await sql`UPDATE tasks SET is_deleted = TRUE, deleted_at = CURRENT_TIMESTAMP WHERE id = ${taskId}`
       
       await sql`
         UPDATE task_deletion_requests 
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
         WHERE id = ${requestId}
       `
 
-      return NextResponse.json({ success: true, message: "Task deleted" })
+      return NextResponse.json({ success: true, message: "Task soft deleted" })
     } else if (action === 'reject') {
       await sql`
         UPDATE task_deletion_requests 

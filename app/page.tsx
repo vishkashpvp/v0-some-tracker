@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { CalendarDays, Clock, Plus, Search, Filter, BarChart3, CheckCircle2, Circle, AlertCircle, Timer, LogOut, Heart } from 'lucide-react'
+import { CalendarDays, Clock, Plus, Search, Filter, BarChart3, CheckCircle2, Circle, AlertCircle, Timer, LogOut, Heart, Trash2 } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -44,6 +44,8 @@ interface Task {
   updated_at: string
   requested_by?: string
   approval_status?: string
+  is_deleted?: boolean // Added for soft delete
+  deleted_at?: string // Added for soft delete
 }
 
 const statusConfig = {
@@ -93,7 +95,8 @@ export default function FrontendTracker() {
   const [session, setSession] = useState<{ username: string, role?: string } | null>(null)
   const [pendingTasks, setPendingTasks] = useState<Task[]>([])
   const [deletionRequests, setDeletionRequests] = useState<any[]>([])
-  const [activeTab, setActiveTab] = useState<'tasks' | 'pending' | 'deletion-requests'>('tasks')
+  const [deletedTasks, setDeletedTasks] = useState<Task[]>([]) // New state for deleted tasks
+  const [activeTab, setActiveTab] = useState<'tasks' | 'pending' | 'deletion-requests' | 'deleted'>('tasks') // Added 'deleted' tab
 
   // Add state for deletion request dialog
   const [deletionDialogOpen, setDeletionDialogOpen] = useState(false)
@@ -171,6 +174,22 @@ export default function FrontendTracker() {
           const deletionData = await deletionResponse.json()
           setDeletionRequests(deletionData)
         }
+
+        // Fetch deleted tasks
+        const deletedResponse = await fetch("/api/tasks/deleted")
+        const deletedContentType = deletedResponse.headers.get("content-type")
+        if (!deletedContentType || !deletedContentType.includes("application/json")) {
+          const errorText = await deletedResponse.text()
+          console.error("Non-JSON response from /api/tasks/deleted:", deletedResponse.status, errorText)
+          setError("Failed to load deleted tasks due to unexpected server response. Check server logs for /api/tasks/deleted.")
+        } else if (!deletedResponse.ok) {
+          const errorData = await deletedResponse.json()
+          console.error("API error response for deleted tasks:", errorData)
+          setError(errorData.error || "Failed to load deleted tasks due to server error.")
+        } else {
+          const deletedData = await deletedResponse.json()
+          setDeletedTasks(deletedData)
+        }
       }
     } catch (error) {
       setError("Failed to load tasks. Please check your network connection and server logs.")
@@ -200,13 +219,15 @@ export default function FrontendTracker() {
   })
 
   const getTaskStats = () => {
-    const total = tasks.length
-    const completed = tasks.filter((t) => t.status === "completed").length
-    const inProgress = tasks.filter((t) => t.status === "in-progress").length
-    const overdue = tasks.filter((t) => new Date(t.due_date) < new Date() && t.status !== "completed").length
+    // Stats should only count non-deleted tasks
+    const activeTasks = tasks.filter(t => !t.is_deleted);
+    const total = activeTasks.length
+    const completed = activeTasks.filter((t) => t.status === "completed").length
+    const inProgress = activeTasks.filter((t) => t.status === "in-progress").length
+    const overdue = activeTasks.filter((t) => new Date(t.due_date) < new Date() && t.status !== "completed").length
 
-    const totalEstimated = tasks.reduce((sum, task) => sum + task.estimated_hours, 0)
-    const totalActual = tasks.reduce((sum, task) => sum + task.actual_hours, 0)
+    const totalEstimated = activeTasks.reduce((sum, task) => sum + task.estimated_hours, 0)
+    const totalActual = activeTasks.reduce((sum, task) => sum + task.actual_hours, 0)
 
     return {
       total,
@@ -309,7 +330,10 @@ export default function FrontendTracker() {
         return
       }
 
-      setTasks([])
+      // Update state to reflect soft deletion
+      setTasks(tasks.map(task => ({ ...task, is_deleted: true, deleted_at: new Date().toISOString() })));
+      setDeletedTasks([...tasks.map(task => ({ ...task, is_deleted: true, deleted_at: new Date().toISOString() })), ...deletedTasks]);
+      
       setIsDeleteAllOpen(false)
       setDeletePin("")
       setPinError("")
@@ -627,7 +651,7 @@ export default function FrontendTracker() {
                       : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
-                  All Tasks ({tasks.length})
+                  All Tasks ({tasks.filter(t => !t.is_deleted).length})
                 </button>
                 <button
                   onClick={() => setActiveTab('pending')}
@@ -648,6 +672,16 @@ export default function FrontendTracker() {
                   }`}
                 >
                   Deletion Requests ({deletionRequests.length})
+                </button>
+                <button
+                  onClick={() => setActiveTab('deleted')}
+                  className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                    activeTab === 'deleted'
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  Deleted Tasks ({deletedTasks.length})
                 </button>
               </div>
             </CardContent>
@@ -957,6 +991,59 @@ export default function FrontendTracker() {
                 {deletionRequests.length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
                     <p>No pending deletion requests.</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Deleted Tasks Section (Admin Only) */}
+        {session?.role === 'admin' && activeTab === 'deleted' && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Deleted Tasks ({deletedTasks.length})</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {deletedTasks.map((task) => (
+                  <div key={task.id} className="border rounded-lg p-4 bg-gray-50 dark:bg-gray-950 border-gray-200 dark:border-gray-800 opacity-70">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="flex-1 space-y-2">
+                        <div className="flex items-center gap-3">
+                          <Trash2 className="h-5 w-5 text-destructive" />
+                          <h3 className="font-semibold text-foreground line-through">{task.title}</h3>
+                        </div>
+                        <p className="text-muted-foreground text-sm line-through">{task.description}</p>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge className={priorityConfig[task.priority].color}>
+                            {priorityConfig[task.priority].label}
+                          </Badge>
+                          <Badge variant="outline" className={categoryConfig[task.category].color}>
+                            {categoryConfig[task.category].label}
+                          </Badge>
+                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                            <CalendarDays className="h-4 w-4" />
+                            {task.due_date}
+                          </div>
+                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                            <Clock className="h-4 w-4" />
+                            {task.actual_hours}h / {task.estimated_hours}h
+                          </div>
+                          {task.deleted_at && (
+                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                              <span className="font-medium">Deleted:</span> {new Date(task.deleted_at).toLocaleDateString()}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      {/* You can add a "Restore" button here if needed in the future */}
+                    </div>
+                  </div>
+                ))}
+                {deletedTasks.length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p>No tasks have been deleted yet.</p>
                   </div>
                 )}
               </div>

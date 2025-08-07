@@ -20,11 +20,8 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: "Invalid PIN" }, { status: 403 })
     }
 
-    // Delete all tasks
-    await sql`DELETE FROM tasks`
-
-    // Reset the sequence to start from 1 again
-    await sql`ALTER SEQUENCE tasks_id_seq RESTART WITH 1`
+    // Soft delete all tasks
+    await sql`UPDATE tasks SET is_deleted = TRUE, deleted_at = CURRENT_TIMESTAMP`
 
     return NextResponse.json({
       success: true,

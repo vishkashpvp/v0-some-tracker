@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
 
     if (session.role === 'admin') {
       // Admin can delete directly
-      await sql`DELETE FROM tasks WHERE id = ${taskId}`
+      await sql`UPDATE tasks SET is_deleted = TRUE, deleted_at = CURRENT_TIMESTAMP WHERE id = ${taskId}`
       return NextResponse.json({ success: true, message: "Task deleted" })
     } else {
       // Users create deletion request

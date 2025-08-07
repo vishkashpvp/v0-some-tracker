@@ -16,7 +16,7 @@ export async function GET() {
              estimated_hours, actual_hours, due_date, created_at, 
              updated_at, approval_status, requested_by, approved_by, approved_at
       FROM tasks 
-      WHERE approval_status = 'pending'
+      WHERE approval_status = 'pending' AND is_deleted = FALSE
       ORDER BY created_at DESC
     `
     console.log("Successfully fetched pending tasks:", pendingTasks.length);
