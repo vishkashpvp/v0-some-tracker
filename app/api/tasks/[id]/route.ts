@@ -9,17 +9,16 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { status, actualHours } = await request.json()
+    const { status } = await request.json() // Removed actualHours
     const taskId = Number.parseInt(params.id)
 
     const result = await sql`
       UPDATE tasks 
       SET status = ${status}, 
-          actual_hours = COALESCE(${actualHours}, actual_hours),
           updated_at = CURRENT_TIMESTAMP
       WHERE id = ${taskId}
       RETURNING id, title, description, status, priority, category, 
-               estimated_hours, actual_hours, due_date, created_at, 
+               due_date, created_at, 
                updated_at, approval_status, requested_by, approved_by, approved_at,
                is_deleted, deleted_at
     `

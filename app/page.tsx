@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { CalendarDays, Clock, Plus, Search, Filter, BarChart3, CheckCircle2, Circle, AlertCircle, Timer, LogOut, Heart, Trash2, User } from 'lucide-react'
+import { CalendarDays, Plus, Search, Filter, BarChart3, CheckCircle2, Circle, AlertCircle, LogOut, Heart, Trash2, User } from 'lucide-react' // Removed Clock and Timer icons
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -37,8 +37,6 @@ interface Task {
   status: TaskStatus
   priority: TaskPriority
   category: TaskCategory
-  estimated_hours: number
-  actual_hours: number
   due_date: string
   created_at: string
   updated_at: string
@@ -50,7 +48,7 @@ interface Task {
 
 const statusConfig = {
   todo: { label: "To Do", color: "bg-gray-500", icon: Circle },
-  "in-progress": { label: "In Progress", color: "bg-blue-500", icon: Timer },
+  "in-progress": { label: "In Progress", color: "bg-blue-500", icon: Circle }, // Changed to Circle as Timer is removed
   review: { label: "Review", color: "bg-yellow-500", icon: AlertCircle },
   completed: { label: "Completed", color: "bg-green-500", icon: CheckCircle2 },
 }
@@ -84,7 +82,6 @@ export default function FrontendTracker() {
     description: "",
     priority: "medium" as TaskPriority,
     category: "features" as TaskCategory,
-    estimatedHours: 0,
     dueDate: "",
   })
   const [isDeleteAllOpen, setIsDeleteAllOpen] = useState(false)
@@ -226,18 +223,12 @@ export default function FrontendTracker() {
     const inProgress = activeTasks.filter((t) => t.status === "in-progress").length
     const overdue = activeTasks.filter((t) => new Date(t.due_date) < new Date() && t.status !== "completed").length
 
-    const totalEstimated = activeTasks.reduce((sum, task) => sum + task.estimated_hours, 0)
-    const totalActual = activeTasks.reduce((sum, task) => sum + task.actual_hours, 0)
-
     return {
       total,
       completed,
       inProgress,
       overdue,
       completionRate: total > 0 ? Math.round((completed / total) * 100) : 0,
-      totalEstimated,
-      totalActual,
-      efficiency: totalEstimated > 0 ? Math.round((totalEstimated / Math.max(totalActual, 1)) * 100) : 100,
     }
   }
 
@@ -289,7 +280,6 @@ export default function FrontendTracker() {
         description: "",
         priority: "medium",
         category: "features",
-        estimatedHours: 0,
         dueDate: "",
       })
       
@@ -470,7 +460,7 @@ export default function FrontendTracker() {
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Heart className="w-4 h-4 text-red-500 fill-red-500" />
-              <span>{session?.username || "User"}</span> {/* Removed role text */}
+              <span>{session?.username || "User"}</span>
             </div>
             <ThemeToggle />
             <Button variant="outline" size="icon" onClick={() => router.push("/profile")}>
@@ -538,7 +528,7 @@ export default function FrontendTracker() {
         {(session?.role !== 'admin' || activeTab === 'tasks') && (
           <>
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"> {/* Changed to 3 columns */}
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">
@@ -564,19 +554,6 @@ export default function FrontendTracker() {
                 <CardContent>
                   <div className="text-2xl font-bold">{stats.completionRate}%</div>
                   <Progress value={stats.completionRate} className="mt-2" />
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Time Efficiency</CardTitle>
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stats.efficiency}%</div>
-                  <p className="text-xs text-muted-foreground">
-                    {stats.totalActual}h actual vs {stats.totalEstimated}h estimated
-                  </p>
                 </CardContent>
               </Card>
 
@@ -642,11 +619,11 @@ export default function FrontendTracker() {
             
             {/* Tasks List */}
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between"> {/* Added flex for alignment */}
+              <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle className="text-lg">Tasks ({filteredTasks.length})</CardTitle>
                 <Dialog open={isAddTaskOpen} onOpenChange={setIsAddTaskOpen}>
                   <DialogTrigger asChild>
-                    <Button size="sm"> {/* Changed to sm size */}
+                    <Button size="sm">
                       <Plus className="w-4 h-4 mr-2" />
                       Add Task
                     </Button>
@@ -721,18 +698,6 @@ export default function FrontendTracker() {
                           </div>
                         </div>
                         <div className="grid gap-2">
-                          <Label htmlFor="estimatedHours">Estimated Hours</Label>
-                          <Input
-                            id="estimatedHours"
-                            type="number"
-                            placeholder="0"
-                            value={newTask.estimatedHours}
-                            onChange={(e) =>
-                              setNewTask({ ...newTask, estimatedHours: Number.parseInt(e.target.value) || 0 })
-                            }
-                          />
-                        </div>
-                        <div className="grid gap-2">
                           <Label htmlFor="dueDate">Due Date</Label>
                           <Input
                             id="dueDate"
@@ -796,10 +761,6 @@ export default function FrontendTracker() {
                               <div className="flex items-center gap-1 text-sm text-muted-foreground">
                                 <CalendarDays className="h-4 w-4" />
                                 {task.due_date}
-                              </div>
-                              <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                                <Clock className="h-4 w-4" />
-                                {task.actual_hours}h / {task.estimated_hours}h
                               </div>
                             </div>
                           </div>
@@ -1031,10 +992,6 @@ export default function FrontendTracker() {
                           <div className="flex items-center gap-1 text-sm text-muted-foreground">
                             <CalendarDays className="h-4 w-4" />
                             {task.due_date}
-                          </div>
-                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                            <Clock className="h-4 w-4" />
-                            {task.actual_hours}h / {task.estimated_hours}h
                           </div>
                           {task.deleted_at && (
                             <div className="flex items-center gap-1 text-sm text-muted-foreground">

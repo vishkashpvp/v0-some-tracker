@@ -13,7 +13,7 @@ export async function GET() {
 
     const pendingTasks = await sql`
       SELECT id, title, description, status, priority, category, 
-             estimated_hours, actual_hours, due_date, created_at, 
+             due_date, created_at, 
              updated_at, approval_status, requested_by, approved_by, approved_at,
              is_deleted, deleted_at
       FROM tasks 

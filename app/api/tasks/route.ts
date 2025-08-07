@@ -14,7 +14,7 @@ export async function GET() {
       // Admin sees only approved and non-deleted tasks in main list
       tasks = await sql`
         SELECT id, title, description, status, priority, category, 
-               estimated_hours, actual_hours, due_date, created_at, 
+               due_date, created_at, 
                updated_at, approval_status, requested_by, approved_by, approved_at,
                is_deleted, deleted_at
         FROM tasks 
@@ -25,7 +25,7 @@ export async function GET() {
       // Users see approved and non-deleted tasks, and their own pending tasks
       tasks = await sql`
         SELECT id, title, description, status, priority, category, 
-               estimated_hours, actual_hours, due_date, created_at, 
+               due_date, created_at, 
                updated_at, approval_status, requested_by, approved_by, approved_at,
                is_deleted, deleted_at
         FROM tasks 
@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { title, description, priority, category, estimatedHours, dueDate } = await request.json()
+    const { title, description, priority, category, dueDate } = await request.json() // Removed estimatedHours
 
     // Validate required fields
     if (!title || !category) {
@@ -64,16 +64,16 @@ export async function POST(request: NextRequest) {
     const result = await sql`
       INSERT INTO tasks (
         title, description, priority, category, 
-        estimated_hours, due_date, approval_status, requested_by,
-        approved_by, approved_at, status, actual_hours, is_deleted
+        due_date, approval_status, requested_by,
+        approved_by, approved_at, status, is_deleted
       )
       VALUES (
         ${title}, ${description}, ${priority}, ${category}, 
-        ${estimatedHours || 0}, ${dueDate || null}, ${approvalStatus}, ${session.username},
-        ${approvedBy}, ${approvedAt}, 'todo', 0, FALSE
+        ${dueDate || null}, ${approvalStatus}, ${session.username},
+        ${approvedBy}, ${approvedAt}, 'todo', FALSE
       )
       RETURNING id, title, description, status, priority, category, 
-           estimated_hours, actual_hours, due_date, created_at, 
+           due_date, created_at, 
            updated_at, approval_status, requested_by, approved_by, approved_at,
            is_deleted, deleted_at
     `

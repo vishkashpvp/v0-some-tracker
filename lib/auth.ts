@@ -8,35 +8,18 @@ export interface AdminUser {
   role: 'admin' | 'user'
 }
 
-// In a real application, passwords should be hashed and stored securely.
-// For this example, we'll use a simple map for demonstration.
-const VALID_USERS: { [key: string]: string } = {
-  vishkash: "Happine$$",
-  veeru: "p@$$woRRR9",
-  // Add more users as needed
-}
-
 export async function verifyCredentials(username: string, password: string): Promise<AdminUser | null> {
   try {
-    // Check if username exists in our hardcoded valid users and password matches
-    if (VALID_USERS[username] === password) {
-      // Get user from database with role
-      const users = await sql`
-        SELECT id, username, role FROM admin_users WHERE username = ${username}
-      `
-      
-      if (users.length > 0) {
-        return users[0] as AdminUser
-      }
-      
-      // If user doesn't exist in DB but credentials are valid, create them
-      const role = username === 'vishkash' ? 'admin' : 'user'
-      const newUser = await sql`
-        INSERT INTO admin_users (username, password_hash, role)
-        VALUES (${username}, 'hash_placeholder', ${role})
-        RETURNING id, username, role
-      `
-      return newUser[0] as AdminUser
+    const users = await sql`
+      SELECT id, username, role, password_hash FROM admin_users WHERE username = ${username}
+    `
+    
+    if (users.length > 0 && users[0].password_hash === password) {
+      return {
+        id: users[0].id,
+        username: users[0].username,
+        role: users[0].role
+      } as AdminUser
     }
     
     return null
@@ -122,20 +105,11 @@ export async function isAdmin(): Promise<boolean> {
 // New function to change user password
 export async function changePassword(userId: number, currentPassword: string, newPassword: string): Promise<boolean> {
   try {
-    // In a real application, you would fetch the user's hashed password from the database
-    // and compare it with the currentPassword using a secure hashing library (e.g., bcrypt).
-    // Then, hash the newPassword and update it in the database.
-
-    // For this example, we'll simulate by checking against the hardcoded VALID_USERS map.
-    // Note: Changes to VALID_USERS here are ephemeral and won't persist across server restarts.
-    const user = await sql`SELECT username FROM admin_users WHERE id = ${userId}`
+    const user = await sql`SELECT username, password_hash FROM admin_users WHERE id = ${userId}`
     if (user.length === 0) return false
 
-    const username = user[0].username
-    if (VALID_USERS[username] === currentPassword) {
-      VALID_USERS[username] = newPassword; // Update hardcoded map (ephemeral)
-      // In a real app, you'd update the database here:
-      // await sql`UPDATE admin_users SET password_hash = ${hashedNewPassword} WHERE id = ${userId}`
+    if (user[0].password_hash === currentPassword) {
+      await sql`UPDATE admin_users SET password_hash = ${newPassword} WHERE id = ${userId}`
       return true;
     }
     return false;
