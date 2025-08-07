@@ -104,8 +104,9 @@ export default function FrontendTracker() {
   const [session, setSession] = useState<{ username: string, role?: string } | null>(null)
   const [pendingTasks, setPendingTasks] = useState<Task[]>([])
   const [deletionRequests, setDeletionRequests] = useState<any[]>([])
-  const [deletedTasks, setDeletedTasks] = useState<Task[]>([]) // New state for deleted tasks
-  const [activeTab, setActiveTab] = useState<'tasks' | 'pending' | 'deletion-requests' | 'deleted'>('tasks') // Added 'deleted' tab
+  const [deletedTasks, setDeletedTasks] = useState<Task[]>([])
+  const [completedTasks, setCompletedTasks] = useState<Task[]>([]) // New state for completed tasks
+  const [activeTab, setActiveTab] = useState<'tasks' | 'pending' | 'deletion-requests' | 'deleted' | 'completed'>('tasks') // Added 'completed' tab
 
   // Add state for deletion request dialog
   const [deletionDialogOpen, setDeletionDialogOpen] = useState(false)
@@ -159,7 +160,7 @@ export default function FrontendTracker() {
           const errorText = await pendingResponse.text()
           setError("Failed to load pending tasks due to unexpected server response. Check server logs for /api/tasks/pending.")
         } else if (!pendingResponse.ok) {
-          const errorData = await pendingResponse.json() // Added await
+          const errorData = await pendingResponse.json()
           setError(errorData.error || "Failed to load pending tasks due to server error.")
         } else {
           const pendingData = await pendingResponse.json()
@@ -173,7 +174,7 @@ export default function FrontendTracker() {
           const errorText = await deletionResponse.text()
           setError("Failed to load deletion requests due to unexpected server response. Check server logs for /api/tasks/deletion-requests.")
         } else if (!deletionResponse.ok) {
-          const errorData = await deletionResponse.json() // Added await
+          const errorData = await deletionResponse.json()
           setError(errorData.error || "Failed to load deletion requests due to server error.")
         } else {
           const deletionData = await deletionResponse.json()
@@ -187,11 +188,25 @@ export default function FrontendTracker() {
           const errorText = await deletedResponse.text()
           setError("Failed to load deleted tasks due to unexpected server response. Check server logs for /api/tasks/deleted.")
         } else if (!deletedResponse.ok) {
-          const errorData = await deletedResponse.json() // Added await
+          const errorData = await deletedResponse.json()
           setError(errorData.error || "Failed to load deleted tasks due to server error.")
         } else {
           const deletedData = await deletedResponse.json()
           setDeletedTasks(deletedData)
+        }
+
+        // Fetch completed tasks
+        const completedResponse = await fetch("/api/tasks/completed")
+        const completedContentType = completedResponse.headers.get("content-type")
+        if (!completedContentType || !completedContentType.includes("application/json")) {
+          const errorText = await completedResponse.text()
+          setError("Failed to load completed tasks due to unexpected server response. Check server logs for /api/tasks/completed.")
+        } else if (!completedResponse.ok) {
+          const errorData = await completedResponse.json()
+          setError(errorData.error || "Failed to load completed tasks due to server error.")
+        } else {
+          const completedData = await completedResponse.json()
+          setCompletedTasks(completedData)
         }
       }
     } catch (error) {
@@ -222,8 +237,8 @@ export default function FrontendTracker() {
     if (session?.role !== 'admin' && task.approval_status === 'pending' && task.requested_by === session?.username) {
       return matchesSearch && matchesStatus && matchesPriority;
     }
-    // For admins, or approved tasks for users, ensure they are not deleted
-    return matchesSearch && matchesStatus && matchesPriority && !task.is_deleted;
+    // For admins, or approved tasks for users, ensure they are not deleted AND not completed (if in 'tasks' tab)
+    return matchesSearch && matchesStatus && matchesPriority && !task.is_deleted && (activeTab !== 'tasks' || task.status !== 'completed');
   })
 
   const getTaskStats = () => {
@@ -260,6 +275,10 @@ export default function FrontendTracker() {
 
       const updatedTask = await response.json()
       setTasks(tasks.map((task) => (task.id === taskId ? updatedTask : task)))
+      // If task status changed to completed, refresh completed tasks list
+      if (newStatus === 'completed') {
+        fetchTasks(); // Re-fetch all to update counts and lists
+      }
     } catch (error: any) {
       setError(error.message || "Failed to update task")
       console.error("Error updating task:", error)
@@ -513,7 +532,7 @@ export default function FrontendTracker() {
                       : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
-                  All Tasks ({tasks.filter(t => !t.is_deleted).length})
+                  All Tasks ({tasks.filter(t => !t.is_deleted && t.status !== 'completed').length})
                 </button>
                 <button
                   onClick={() => setActiveTab('pending')}
@@ -534,6 +553,16 @@ export default function FrontendTracker() {
                   }`}
                 >
                   Deletion Requests ({deletionRequests.length})
+                </button>
+                <button
+                  onClick={() => setActiveTab('completed')}
+                  className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                    activeTab === 'completed'
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  Completed Tasks ({completedTasks.length})
                 </button>
                 <button
                   onClick={() => setActiveTab('deleted')}
@@ -993,6 +1022,86 @@ export default function FrontendTracker() {
                 {deletionRequests.length === 0 && (
                   <div className="text-center py-8 text-muted-foreground">
                     <p>No pending deletion requests.</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Completed Tasks Section (Admin Only) */}
+        {session?.role === 'admin' && activeTab === 'completed' && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Completed Tasks ({completedTasks.length})</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {completedTasks.map((task) => {
+                  const StatusIcon = statusConfig[task.status].icon
+                  const locked = isTaskLocked(task);
+                  return (
+                    <div
+                      key={task.id}
+                      className={`border rounded-lg p-4 transition-colors ${
+                        locked ? "border-gray-300 bg-gray-100 dark:bg-gray-900 opacity-70" :
+                        "border-border"
+                      }`}
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-center gap-3">
+                            <StatusIcon
+                              className={`h-5 w-5 ${statusConfig[task.status].color.replace("bg-", "text-")}`}
+                            />
+                            <h3 className="font-semibold text-foreground">{task.title}</h3>
+                            {locked && (
+                              <Badge variant="secondary" className="text-xs">
+                                Locked
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-muted-foreground text-sm">{task.description}</p>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Badge className={priorityConfig[task.priority].color}>
+                              {priorityConfig[task.priority].label}
+                            </Badge>
+                            <Badge variant="outline" className={categoryConfig[task.category].color}>
+                              {categoryConfig[task.category].label}
+                            </Badge>
+                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                              <CalendarDays className="h-4 w-4" />
+                              {new Date(task.due_date).toLocaleDateString()}
+                            </div>
+                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                              <span className="font-medium">Completed:</span> {new Date(task.updated_at).toLocaleDateString()}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Select
+                            value={task.status}
+                            onValueChange={(value: TaskStatus) => updateTaskStatus(task.id, value)}
+                            disabled={locked} // Disable if locked
+                          >
+                            <SelectTrigger className="w-[130px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="todo">To Do</SelectItem>
+                              <SelectItem value="in-progress">In Progress</SelectItem>
+                              <SelectItem value="review">Review</SelectItem>
+                              <SelectItem value="completed">Completed</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+                {completedTasks.length === 0 && (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p>No tasks have been completed yet.</p>
                   </div>
                 )}
               </div>
