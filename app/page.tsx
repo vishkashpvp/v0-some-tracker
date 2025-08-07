@@ -467,124 +467,19 @@ export default function FrontendTracker() {
               {session?.role === 'admin' ? 'Admin Dashboard - Manage tasks and approvals' : 'Track progress and manage your tasks'}
             </p>
           </div>
-          <div className="flex items-center gap-2"> {/* Reduced gap for icon buttons */}
+          <div className="flex items-center gap-2">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Heart className="w-4 h-4 text-red-500 fill-red-500" />
-              <span>{session?.username || "User"} ({session?.role === 'admin' ? 'Admin' : 'User'})</span>
+              <span>{session?.username || "User"}</span> {/* Removed role text */}
             </div>
             <ThemeToggle />
-            <Dialog open={isAddTaskOpen} onOpenChange={setIsAddTaskOpen}>
-              <DialogTrigger asChild>
-                <Button size="icon"> {/* Changed to icon size */}
-                  <Plus className="w-4 h-4" />
-                  <span className="sr-only">Add Task</span> {/* Screen reader only text */}
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
-                <DialogHeader>
-                  <DialogTitle>Add New Task</DialogTitle>
-                  <DialogDescription>
-                    {session?.role === 'admin' 
-                      ? "Create a new task (will be approved automatically)"
-                      : "Create a new task (requires admin approval)"
-                    }
-                  </DialogDescription>
-                </DialogHeader>
-                <form onSubmit={handleAddTask}>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="title">Title</Label>
-                      <Input
-                        id="title"
-                        placeholder="Enter task title"
-                        value={newTask.title}
-                        onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-                        required
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="description">Description</Label>
-                      <Textarea
-                        id="description"
-                        placeholder="Enter task description"
-                        value={newTask.description}
-                        onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="grid gap-2">
-                        <Label htmlFor="priority">Priority</Label>
-                        <Select
-                          value={newTask.priority}
-                          onValueChange={(value: TaskPriority) => setNewTask({ ...newTask, priority: value })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select priority" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="low">Low</SelectItem>
-                            <SelectItem value="medium">Medium</SelectItem>
-                            <SelectItem value="high">High</SelectItem>
-                            <SelectItem value="urgent">Urgent</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="grid gap-2">
-                        <Label htmlFor="category">Category</Label>
-                        <Select
-                          value={newTask.category}
-                          onValueChange={(value: TaskCategory) => setNewTask({ ...newTask, category: value })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select category" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="ui-design">UI Design</SelectItem>
-                            <SelectItem value="components">Components</SelectItem>
-                            <SelectItem value="features">Features</SelectItem>
-                            <SelectItem value="testing">Testing</SelectItem>
-                            <SelectItem value="optimization">Optimization</SelectItem>
-                            <SelectItem value="bug-fix">Bug Fix</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="estimatedHours">Estimated Hours</Label>
-                      <Input
-                        id="estimatedHours"
-                        type="number"
-                        placeholder="0"
-                        value={newTask.estimatedHours}
-                        onChange={(e) =>
-                          setNewTask({ ...newTask, estimatedHours: Number.parseInt(e.target.value) || 0 })
-                        }
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="dueDate">Due Date</Label>
-                      <Input
-                        id="dueDate"
-                        type="date"
-                        value={newTask.dueDate}
-                        onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
-                      />
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button type="submit">Add Task</Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
-            {/* Delete All Tasks button moved to Deletion Requests tab */}
-            <Button variant="outline" size="icon" onClick={() => router.push("/profile")}> {/* Changed to icon size */}
+            <Button variant="outline" size="icon" onClick={() => router.push("/profile")}>
               <User className="w-4 h-4" />
-              <span className="sr-only">Profile</span> {/* Screen reader only text */}
+              <span className="sr-only">Profile</span>
             </Button>
-            <Button variant="outline" size="icon" onClick={handleLogout}> {/* Changed to icon size */}
+            <Button variant="outline" size="icon" onClick={handleLogout}>
               <LogOut className="w-4 h-4" />
-              <span className="sr-only">Logout</span> {/* Screen reader only text */}
+              <span className="sr-only">Logout</span>
             </Button>
           </div>
         </div>
@@ -747,8 +642,112 @@ export default function FrontendTracker() {
             
             {/* Tasks List */}
             <Card>
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between"> {/* Added flex for alignment */}
                 <CardTitle className="text-lg">Tasks ({filteredTasks.length})</CardTitle>
+                <Dialog open={isAddTaskOpen} onOpenChange={setIsAddTaskOpen}>
+                  <DialogTrigger asChild>
+                    <Button size="sm"> {/* Changed to sm size */}
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Task
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                      <DialogTitle>Add New Task</DialogTitle>
+                      <DialogDescription>
+                        {session?.role === 'admin' 
+                          ? "Create a new task (will be approved automatically)"
+                          : "Create a new task (requires admin approval)"
+                        }
+                      </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleAddTask}>
+                      <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                          <Label htmlFor="title">Title</Label>
+                          <Input
+                            id="title"
+                            placeholder="Enter task title"
+                            value={newTask.title}
+                            onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
+                            required
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="description">Description</Label>
+                          <Textarea
+                            id="description"
+                            placeholder="Enter task description"
+                            value={newTask.description}
+                            onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="grid gap-2">
+                            <Label htmlFor="priority">Priority</Label>
+                            <Select
+                              value={newTask.priority}
+                              onValueChange={(value: TaskPriority) => setNewTask({ ...newTask, priority: value })}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select priority" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="low">Low</SelectItem>
+                                <SelectItem value="medium">Medium</SelectItem>
+                                <SelectItem value="high">High</SelectItem>
+                                <SelectItem value="urgent">Urgent</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="category">Category</Label>
+                            <Select
+                              value={newTask.category}
+                              onValueChange={(value: TaskCategory) => setNewTask({ ...newTask, category: value })}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select category" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="ui-design">UI Design</SelectItem>
+                                <SelectItem value="components">Components</SelectItem>
+                                <SelectItem value="features">Features</SelectItem>
+                                <SelectItem value="testing">Testing</SelectItem>
+                                <SelectItem value="optimization">Optimization</SelectItem>
+                                <SelectItem value="bug-fix">Bug Fix</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="estimatedHours">Estimated Hours</Label>
+                          <Input
+                            id="estimatedHours"
+                            type="number"
+                            placeholder="0"
+                            value={newTask.estimatedHours}
+                            onChange={(e) =>
+                              setNewTask({ ...newTask, estimatedHours: Number.parseInt(e.target.value) || 0 })
+                            }
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="dueDate">Due Date</Label>
+                          <Input
+                            id="dueDate"
+                            type="date"
+                            value={newTask.dueDate}
+                            onChange={(e) => setNewTask({ ...newTask, dueDate: e.target.value })}
+                          />
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button type="submit">Add Task</Button>
+                      </DialogFooter>
+                    </form>
+                  </DialogContent>
+                </Dialog>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
