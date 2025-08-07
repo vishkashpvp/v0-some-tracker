@@ -21,8 +21,11 @@ export async function POST(request: NextRequest) {
     } else {
       return NextResponse.json({ error: "Invalid current password or failed to update" }, { status: 400 })
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error("Change password API error:", error)
+    if (error.message && error.message.includes('Database setup incomplete')) {
+      return NextResponse.json({ error: error.message }, { status: 500 })
+    }
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

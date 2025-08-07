@@ -23,9 +23,12 @@ export async function verifyCredentials(username: string, password: string): Pro
     }
     
     return null
-  } catch (error) {
+  } catch (error: any) {
     console.error("Auth error:", error)
-    return null
+    if (error.message && error.message.includes('relation "admin_users" does not exist')) {
+      throw new Error("Database setup incomplete: 'admin_users' table not found. Please run the setup SQL script.")
+    }
+    throw error // Re-throw other errors
   }
 }
 
@@ -68,9 +71,14 @@ export async function getSession(): Promise<AdminUser | null> {
       username: session.username,
       role: session.role || 'user' 
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error("Session error:", error)
-    return null
+    if (error.message && error.message.includes('relation "admin_users" does not exist')) {
+      // This error might occur if the session is valid but the DB is reset
+      // In this case, we should probably just return null to force re-login
+      return null 
+    }
+    return null // For other errors, treat as no session
   }
 }
 
@@ -90,9 +98,12 @@ export async function verifyDeletePin(pin: string): Promise<boolean> {
     }
     
     return false
-  } catch (error) {
+  } catch (error: any) {
     console.error("PIN verification error:", error)
-    return false
+    if (error.message && error.message.includes('relation "system_settings" does not exist')) {
+      throw new Error("Database setup incomplete: 'system_settings' table not found. Please run the setup SQL script.")
+    }
+    throw error // Re-throw other errors
   }
 }
 
@@ -113,8 +124,11 @@ export async function changePassword(userId: number, currentPassword: string, ne
       return true;
     }
     return false;
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error changing password:", error);
-    return false;
+    if (error.message && error.message.includes('relation "admin_users" does not exist')) {
+      throw new Error("Database setup incomplete: 'admin_users' table not found. Please run the setup SQL script.");
+    }
+    throw error; // Re-throw other errors
   }
 }

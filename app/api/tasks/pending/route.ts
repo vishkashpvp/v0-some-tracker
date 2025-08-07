@@ -22,9 +22,11 @@ export async function GET() {
     `
     console.log("Successfully fetched pending tasks:", pendingTasks.length);
     return NextResponse.json(pendingTasks)
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error fetching pending tasks:", error)
-    // Ensure that even in case of an error, a JSON response is returned.
+    if (error.message && error.message.includes('relation "tasks" does not exist')) {
+      return NextResponse.json({ error: "Database setup incomplete: 'tasks' table not found. Please run the setup SQL script." }, { status: 500 })
+    }
     return NextResponse.json({ error: "Internal server error fetching pending tasks" }, { status: 500 })
   }
 }

@@ -36,8 +36,11 @@ export async function GET() {
     }
 
     return NextResponse.json(tasks)
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error fetching tasks:", error)
+    if (error.message && error.message.includes('relation "tasks" does not exist')) {
+      return NextResponse.json({ error: "Database setup incomplete: 'tasks' table not found. Please run the setup SQL script." }, { status: 500 })
+    }
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
@@ -79,8 +82,11 @@ export async function POST(request: NextRequest) {
     `
 
     return NextResponse.json(result[0])
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error creating task:", error)
+    if (error.message && error.message.includes('relation "tasks" does not exist')) {
+      return NextResponse.json({ error: "Database setup incomplete: 'tasks' table not found. Please run the setup SQL script." }, { status: 500 })
+    }
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

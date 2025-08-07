@@ -19,9 +19,11 @@ export async function GET() {
       ORDER BY deleted_at DESC
     `
     return NextResponse.json(deletedTasks)
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error fetching deleted tasks:", error); // Added console.log
-    console.log("Returning 500 error from /api/tasks/deleted"); // Added console.log
+    if (error.message && error.message.includes('relation "tasks" does not exist')) {
+      return NextResponse.json({ error: "Database setup incomplete: 'tasks' table not found. Please run the setup SQL script." }, { status: 500 })
+    }
     return NextResponse.json({ error: "Internal server error fetching deleted tasks" }, { status: 500 })
   }
 }

@@ -46,8 +46,11 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     }
 
     return NextResponse.json(result[0])
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error updating task:", error)
+    if (error.message && error.message.includes('relation "tasks" does not exist')) {
+      return NextResponse.json({ error: "Database setup incomplete: 'tasks' table not found. Please run the setup SQL script." }, { status: 500 })
+    }
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
@@ -85,8 +88,11 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     }
 
     return NextResponse.json({ success: true })
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error deleting task:", error)
+    if (error.message && error.message.includes('relation "tasks" does not exist')) {
+      return NextResponse.json({ error: "Database setup incomplete: 'tasks' table not found. Please run the setup SQL script." }, { status: 500 })
+    }
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

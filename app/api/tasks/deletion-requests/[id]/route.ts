@@ -61,8 +61,11 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     }
 
     return NextResponse.json({ error: "Invalid action" }, { status: 400 })
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error processing deletion request:", error)
+    if (error.message && (error.message.includes('relation "task_deletion_requests" does not exist') || error.message.includes('relation "tasks" does not exist'))) {
+      return NextResponse.json({ error: "Database setup incomplete: 'task_deletion_requests' or 'tasks' table not found. Please run the setup SQL script." }, { status: 500 })
+    }
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
