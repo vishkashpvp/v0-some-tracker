@@ -16,7 +16,9 @@ export function PinInput({ length, value, onChange, onComplete }: PinInputProps)
 
   useEffect(() => {
     // Update pins when value changes externally
-    const newPins = value.split("").concat(Array(length).fill("")).slice(0, length)
+    // Ensure value is a string before splitting
+    const safeValue = value || ""; // Defensive check
+    const newPins = safeValue.split("").concat(Array(length).fill("")).slice(0, length)
     setPins(newPins)
   }, [value, length])
 
@@ -52,7 +54,9 @@ export function PinInput({ length, value, onChange, onComplete }: PinInputProps)
   const handlePaste = (e: React.ClipboardEvent) => {
     e.preventDefault()
     const pastedData = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, length)
-    const newPins = pastedData.split("").concat(Array(length).fill("")).slice(0, length)
+    // Ensure pastedData is a string before splitting
+    const safePastedData = pastedData || ""; // Defensive check
+    const newPins = safePastedData.split("").concat(Array(length).fill("")).slice(0, length)
     setPins(newPins)
     onChange(pastedData)
 
