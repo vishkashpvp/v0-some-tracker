@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { CalendarDays, Plus, Search, Filter, BarChart3, CheckCircle2, Circle, AlertCircle, LogOut, Heart, Trash2, User, ChevronDown } from 'lucide-react' // Added ChevronDown for dropdown
+import { CalendarDays, Plus, Search, Filter, BarChart3, CheckCircle2, Circle, AlertCircle, LogOut, Heart, Trash2, User, ChevronDown, Users } from 'lucide-react' // Added Users icon for switch user
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -26,6 +26,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { PinInput } from "@/components/pin-input"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu" // Import DropdownMenu components
+import { UpcomingTasksWidget } from "@/components/upcoming-tasks-widget" // Import new widget
+import { SwitchUserDialog } from "@/components/switch-user-dialog" // Import new dialog
 
 type TaskStatus = "todo" | "in-progress" | "review" | "completed"
 type TaskPriority = "low" | "medium" | "high" | "urgent"
@@ -107,6 +109,7 @@ export default function FrontendTracker() {
   const [deletedTasks, setDeletedTasks] = useState<Task[]>([])
   const [completedTasks, setCompletedTasks] = useState<Task[]>([]) // New state for completed tasks
   const [activeTab, setActiveTab] = useState<'tasks' | 'pending' | 'deletion-requests' | 'deleted' | 'completed'>('tasks') // Added 'completed' tab
+  const [isSwitchUserOpen, setIsSwitchUserOpen] = useState(false) // State for switch user dialog
 
   // Add state for deletion request dialog
   const [deletionDialogOpen, setDeletionDialogOpen] = useState(false)
@@ -512,6 +515,12 @@ export default function FrontendTracker() {
                   <User className="w-4 h-4 mr-2" />
                   Profile
                 </DropdownMenuItem>
+                {session?.role === 'admin' && ( // Only show switch user for admin
+                  <DropdownMenuItem onClick={() => setIsSwitchUserOpen(true)}>
+                    <Users className="w-4 h-4 mr-2" />
+                    Switch User
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="w-4 h-4 mr-2" />
                   Logout
@@ -626,6 +635,9 @@ export default function FrontendTracker() {
               </Card>
             </div>
             
+            {/* New: Upcoming Tasks Widget */}
+            <UpcomingTasksWidget />
+
             {/* Filters */}
             <Card>
               <CardHeader>
@@ -1189,6 +1201,9 @@ export default function FrontendTracker() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Switch User Dialog */}
+      <SwitchUserDialog isOpen={isSwitchUserOpen} onOpenChange={setIsSwitchUserOpen} />
 
       <Footer />
     </div>
