@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { CalendarDays, Plus, Search, Filter, BarChart3, CheckCircle2, Circle, AlertCircle, LogOut, Heart, Trash2, User, ChevronDown, Users } from 'lucide-react' // Added Users icon for switch user
+import { CalendarDays, Plus, Search, Filter, BarChart3, CheckCircle2, Circle, AlertCircle, LogOut, Heart, Trash2, User, ChevronDown } from 'lucide-react' // Added Users icon for switch user
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -27,7 +27,6 @@ import { PinInput } from "@/components/pin-input"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu" // Import DropdownMenu components
 import { UpcomingTasksWidget } from "@/components/upcoming-tasks-widget" // Import new widget
-import { SwitchUserDialog } from "@/components/switch-user-dialog" // Import new dialog
 
 type TaskStatus = "todo" | "in-progress" | "review" | "completed"
 type TaskPriority = "low" | "medium" | "high" | "urgent"
@@ -68,7 +67,7 @@ const categoryConfig = {
   components: { label: "Components", color: "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200" },
   features: { label: "Features", color: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200" },
   testing: { label: "Testing", color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200" },
-  optimization: { label: "Optimization", color: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200" },
+  optimization": { label: "Optimization", color: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200" },
   "bug-fix": { label: "Bug Fix", color: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200" },
 }
 
@@ -109,9 +108,6 @@ export default function FrontendTracker() {
   const [deletedTasks, setDeletedTasks] = useState<Task[]>([])
   const [completedTasks, setCompletedTasks] = useState<Task[]>([]) // New state for completed tasks
   const [activeTab, setActiveTab] = useState<'tasks' | 'pending' | 'deletion-requests' | 'deleted' | 'completed'>('tasks') // Added 'completed' tab
-  const [isSwitchUserOpen, setIsSwitchUserOpen] = useState(false) // State for switch user dialog
-
-  // Add state for deletion request dialog
   const [deletionDialogOpen, setDeletionDialogOpen] = useState(false)
   const [selectedTaskForDeletion, setSelectedTaskForDeletion] = useState<Task | null>(null)
   const [deletionReason, setDeletionReason] = useState("")
@@ -515,12 +511,7 @@ export default function FrontendTracker() {
                   <User className="w-4 h-4 mr-2" />
                   Profile
                 </DropdownMenuItem>
-                {session?.role === 'admin' && ( // Only show switch user for admin
-                  <DropdownMenuItem onClick={() => setIsSwitchUserOpen(true)}>
-                    <Users className="w-4 h-4 mr-2" />
-                    Switch User
-                  </DropdownMenuItem>
-                )}
+                
                 <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="w-4 h-4 mr-2" />
                   Logout
@@ -1201,9 +1192,6 @@ export default function FrontendTracker() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Switch User Dialog */}
-      <SwitchUserDialog isOpen={isSwitchUserOpen} onOpenChange={setIsSwitchUserOpen} />
 
       <Footer />
     </div>
