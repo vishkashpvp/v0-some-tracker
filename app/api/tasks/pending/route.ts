@@ -3,11 +3,9 @@ import { sql } from "@/lib/db"
 import { getSession } from "@/lib/auth"
 
 export async function GET() {
-  console.log("Hitting /api/tasks/pending GET route"); // Added for debugging
   try {
     const session = await getSession()
     if (!session || session.role !== 'admin') {
-      console.log("Admin access required for /api/tasks/pending, session:", session);
       return NextResponse.json({ error: "Admin access required" }, { status: 403 })
     }
 
@@ -20,7 +18,6 @@ export async function GET() {
       WHERE approval_status = 'pending' AND is_deleted = FALSE
       ORDER BY created_at DESC
     `
-    console.log("Successfully fetched pending tasks:", pendingTasks.length);
     return NextResponse.json(pendingTasks)
   } catch (error: any) {
     console.error("Error fetching pending tasks:", error)

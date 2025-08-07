@@ -20,7 +20,6 @@ export async function GET() {
     `
     return NextResponse.json(deletedTasks)
   } catch (error: any) {
-    console.error("Error fetching deleted tasks:", error); // Added console.log
     if (error.message && error.message.includes('relation "tasks" does not exist')) {
       return NextResponse.json({ error: "Database setup incomplete: 'tasks' table not found. Please run the setup SQL script." }, { status: 500 })
     }
