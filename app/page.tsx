@@ -183,7 +183,7 @@ export default function FrontendTracker() {
           console.error("Non-JSON response from /api/tasks/deleted:", deletedResponse.status, errorText)
           setError("Failed to load deleted tasks due to unexpected server response. Check server logs for /api/tasks/deleted.")
         } else if (!deletedResponse.ok) {
-          const errorData = await deletedResponse.json()
+          const errorData = deletedResponse.json()
           console.error("API error response for deleted tasks:", errorData)
           setError(errorData.error || "Failed to load deleted tasks due to server error.")
         } else {
@@ -467,7 +467,7 @@ export default function FrontendTracker() {
               {session?.role === 'admin' ? 'Admin Dashboard - Manage tasks and approvals' : 'Track progress and manage your tasks'}
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-3 justify-end"> {/* Added flex-wrap and justify-end */}
+          <div className="flex items-center gap-2"> {/* Reduced gap for icon buttons */}
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Heart className="w-4 h-4 text-red-500 fill-red-500" />
               <span>{session?.username || "User"} ({session?.role === 'admin' ? 'Admin' : 'User'})</span>
@@ -475,9 +475,9 @@ export default function FrontendTracker() {
             <ThemeToggle />
             <Dialog open={isAddTaskOpen} onOpenChange={setIsAddTaskOpen}>
               <DialogTrigger asChild>
-                <Button>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Task
+                <Button size="icon"> {/* Changed to icon size */}
+                  <Plus className="w-4 h-4" />
+                  <span className="sr-only">Add Task</span> {/* Screen reader only text */}
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-[425px]">
@@ -577,67 +577,14 @@ export default function FrontendTracker() {
                 </form>
               </DialogContent>
             </Dialog>
-            {session?.role === 'admin' && (
-              <Dialog open={isDeleteAllOpen} onOpenChange={setIsDeleteAllOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="destructive" size="sm">
-                    Delete All Tasks
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Delete All Tasks</DialogTitle>
-                    <DialogDescription>
-                      This action cannot be undone. Enter the 5-digit PIN to permanently delete all tasks from the database.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="py-4">
-                    <div className="space-y-4">
-                      <div className="text-center">
-                        <Label className="text-sm font-medium">Enter PIN</Label>
-                        <div className="mt-2">
-                          <PinInput
-                            length={5}
-                            value={deletePin}
-                            onChange={setDeletePin}
-                            onComplete={(pin) => setDeletePin(pin)}
-                          />
-                        </div>
-                        {pinError && (
-                          <p className="text-sm text-destructive mt-2">{pinError}</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button 
-                      variant="outline" 
-                      onClick={() => {
-                        setIsDeleteAllOpen(false)
-                        setDeletePin("")
-                        setPinError("")
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                    <Button 
-                      variant="destructive" 
-                      onClick={handleDeleteAllTasks} 
-                      disabled={isDeleting || deletePin.length !== 5}
-                    >
-                      {isDeleting ? "Deleting..." : "Delete All Tasks"}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            )}
-            <Button variant="outline" onClick={() => router.push("/profile")}>
-              <User className="w-4 h-4 mr-2" />
-              Profile
+            {/* Delete All Tasks button moved to Deletion Requests tab */}
+            <Button variant="outline" size="icon" onClick={() => router.push("/profile")}> {/* Changed to icon size */}
+              <User className="w-4 h-4" />
+              <span className="sr-only">Profile</span> {/* Screen reader only text */}
             </Button>
-            <Button variant="outline" onClick={handleLogout}>
-              <LogOut className="w-4 h-4 mr-2" />
-              Logout
+            <Button variant="outline" size="icon" onClick={handleLogout}> {/* Changed to icon size */}
+              <LogOut className="w-4 h-4" />
+              <span className="sr-only">Logout</span> {/* Screen reader only text */}
             </Button>
           </div>
         </div>
@@ -959,8 +906,60 @@ export default function FrontendTracker() {
         {/* Deletion Requests Section (Admin Only) */}
         {session?.role === 'admin' && activeTab === 'deletion-requests' && (
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-lg">Deletion Requests ({deletionRequests.length})</CardTitle>
+              <Dialog open={isDeleteAllOpen} onOpenChange={setIsDeleteAllOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="destructive" size="sm">
+                    Delete All Tasks
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Delete All Tasks</DialogTitle>
+                    <DialogDescription>
+                      This action cannot be undone. Enter the 5-digit PIN to permanently delete all tasks from the database.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="py-4">
+                    <div className="space-y-4">
+                      <div className="text-center">
+                        <Label className="text-sm font-medium">Enter PIN</Label>
+                        <div className="mt-2">
+                          <PinInput
+                            length={5}
+                            value={deletePin}
+                            onChange={setDeletePin}
+                            onComplete={(pin) => setDeletePin(pin)}
+                          />
+                        </div>
+                        {pinError && (
+                          <p className="text-sm text-destructive mt-2">{pinError}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        setIsDeleteAllOpen(false)
+                        setDeletePin("")
+                        setPinError("")
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      variant="destructive" 
+                      onClick={handleDeleteAllTasks} 
+                      disabled={isDeleting || deletePin.length !== 5}
+                    >
+                      {isDeleting ? "Deleting..." : "Delete All Tasks"}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">

@@ -8,11 +8,11 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { User, Lock, KeyRound } from 'lucide-react'
+import { User, Lock } from 'lucide-react' // Removed KeyRound as role is no longer displayed
 
 export default function ProfilePage() {
   const [username, setUsername] = useState("")
-  const [role, setRole] = useState("")
+  // Removed role state as it's no longer displayed
   const [currentPassword, setCurrentPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [confirmNewPassword, setConfirmNewPassword] = useState("")
@@ -28,7 +28,7 @@ export default function ProfilePage() {
         if (response.ok) {
           const data = await response.json()
           setUsername(data.user.username)
-          setRole(data.user.role)
+          // Removed setRole(data.user.role)
         } else {
           router.push("/login") // Redirect if no session
         }
@@ -87,25 +87,19 @@ export default function ProfilePage() {
           <CardTitle className="text-2xl font-bold">User Profile</CardTitle>
           <CardDescription>Manage your account settings</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6 p-6"> {/* Added p-6 for consistent padding */}
-          <div className="space-y-4"> {/* Group user info */}
-            <div className="flex items-center justify-between pb-2 border-b border-border"> {/* Consistent border */}
+        <CardContent className="space-y-6 p-6">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between pb-2 border-b border-border">
               <div className="flex items-center gap-2">
                 <User className="h-5 w-5 text-muted-foreground" />
                 <span className="text-lg font-medium">Username:</span>
               </div>
               <span className="text-lg text-foreground">{username}</span>
             </div>
-            <div className="flex items-center justify-between pb-2 border-b border-border"> {/* Consistent border */}
-              <div className="flex items-center gap-2">
-                <KeyRound className="h-5 w-5 text-muted-foreground" />
-                <span className="text-lg font-medium">Role:</span>
-              </div>
-              <span className="text-lg text-foreground capitalize">{role}</span>
-            </div>
+            {/* Removed role display */}
           </div>
 
-          <h2 className="text-xl font-bold pt-4 border-t border-border">Change Password</h2> {/* Added border-t and pt-4 */}
+          <h2 className="text-xl font-bold pt-4 border-t border-border">Change Password</h2>
           <form onSubmit={handleChangePassword} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="current-password">Current Password</Label>
