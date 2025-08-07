@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { CalendarDays, Loader2 } from 'lucide-react'
+import { CalendarDays, Loader2, ListTodo } from 'lucide-react' // Added ListTodo icon
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button" // Import Button
 
 type TaskStatus = "todo" | "in-progress" | "review" | "completed"
 type TaskPriority = "low" | "medium" | "high" | "urgent"
@@ -30,6 +31,13 @@ const priorityConfig = {
   medium: { label: "Medium", color: "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200" },
   high: { label: "High", color: "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200" },
   urgent: { label: "Urgent", color: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200" },
+}
+
+const statusConfig = { // Added for better status display
+  todo: { label: "To Do", color: "bg-gray-500/20 text-gray-700 dark:text-gray-300" },
+  "in-progress": { label: "In Progress", color: "bg-blue-500/20 text-blue-700 dark:text-blue-300" },
+  review: { label: "Review", color: "bg-yellow-500/20 text-yellow-700 dark:text-yellow-300" },
+  completed: { label: "Completed", color: "bg-green-500/20 text-green-700 dark:text-green-300" },
 }
 
 export function UpcomingTasksWidget() {
@@ -72,23 +80,41 @@ export function UpcomingTasksWidget() {
         ) : error ? (
           <p className="text-sm text-destructive">{error}</p>
         ) : upcomingTasks.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No upcoming tasks this week!</p>
+          <div className="flex flex-col items-center justify-center h-24 text-muted-foreground">
+            <ListTodo className="h-8 w-8 mb-2 opacity-50" />
+            <p className="text-sm">No upcoming tasks this week!</p>
+          </div>
         ) : (
           <div className="space-y-3">
             {upcomingTasks.map((task) => (
-              <div key={task.id} className="flex items-center justify-between text-sm">
-                <div className="flex flex-col">
-                  <span className="font-medium">{task.title}</span>
-                  <span className="text-muted-foreground text-xs">
-                    Due: {new Date(task.due_date).toLocaleDateString()}
-                    {task.approval_status === 'pending' && <span className="ml-1 text-yellow-600 dark:text-yellow-400">(Pending)</span>}
-                  </span>
+              <div key={task.id} className="border rounded-md p-3 hover:bg-muted/50 transition-colors">
+                <div className="flex items-center justify-between text-sm mb-1">
+                  <span className="font-medium text-foreground">{task.title}</span>
+                  <Badge className={priorityConfig[task.priority].color}>
+                    {priorityConfig[task.priority].label}
+                  </Badge>
                 </div>
-                <Badge className={priorityConfig[task.priority].color}>
-                  {priorityConfig[task.priority].label}
-                </Badge>
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1">
+                    <CalendarDays className="h-3 w-3" />
+                    <span>Due: {new Date(task.due_date).toLocaleDateString()}</span>
+                  </div>
+                  <Badge variant="outline" className={statusConfig[task.status].color}>
+                    {statusConfig[task.status].label}
+                  </Badge>
+                </div>
+                {task.approval_status === 'pending' && (
+                  <Badge variant="outline" className="mt-1 text-xs border-yellow-500 text-yellow-700 dark:text-yellow-300">
+                    Pending Approval
+                  </Badge>
+                )}
               </div>
             ))}
+            <div className="pt-2">
+              <Button variant="outline" size="sm" className="w-full" onClick={() => window.location.href = '/'}>
+                View All Tasks
+              </Button>
+            </div>
           </div>
         )}
       </CardContent>

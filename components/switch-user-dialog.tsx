@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Lock } from 'lucide-react' // Import Lock icon
 
 interface SwitchUserDialogProps {
   isOpen: boolean
@@ -22,6 +23,7 @@ interface SwitchUserDialogProps {
 
 export function SwitchUserDialog({ isOpen, onOpenChange }: SwitchUserDialogProps) {
   const [targetUsername, setTargetUsername] = useState("")
+  const [targetPassword, setTargetPassword] = useState("") // New state for password
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
@@ -33,7 +35,7 @@ export function SwitchUserDialog({ isOpen, onOpenChange }: SwitchUserDialogProps
       const response = await fetch("/api/auth/switch-user", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username: targetUsername }),
+        body: JSON.stringify({ username: targetUsername, password: targetPassword }), // Send password
       })
 
       const data = await response.json()
@@ -58,7 +60,7 @@ export function SwitchUserDialog({ isOpen, onOpenChange }: SwitchUserDialogProps
         <DialogHeader>
           <DialogTitle>Switch User</DialogTitle>
           <DialogDescription>
-            Enter the username of the account you wish to switch to.
+            Enter the username and password of the account you wish to switch to.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -72,6 +74,21 @@ export function SwitchUserDialog({ isOpen, onOpenChange }: SwitchUserDialogProps
               required
             />
           </div>
+          <div className="grid gap-2">
+            <Label htmlFor="target-password">Target Password</Label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Input
+                id="target-password"
+                type="password"
+                placeholder="Enter target password"
+                value={targetPassword}
+                onChange={(e) => setTargetPassword(e.target.value)}
+                className="pl-10"
+                required
+              />
+            </div>
+          </div>
           {error && (
             <Alert variant="destructive">
               <AlertDescription>{error}</AlertDescription>
@@ -82,7 +99,7 @@ export function SwitchUserDialog({ isOpen, onOpenChange }: SwitchUserDialogProps
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
             Cancel
           </Button>
-          <Button onClick={handleSwitch} disabled={isLoading || !targetUsername.trim()}>
+          <Button onClick={handleSwitch} disabled={isLoading || !targetUsername.trim() || !targetPassword.trim()}>
             {isLoading ? "Switching..." : "Switch User"}
           </Button>
         </DialogFooter>

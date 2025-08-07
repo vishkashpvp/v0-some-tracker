@@ -8,23 +8,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Admin access required to switch users" }, { status: 403 })
     }
 
-    const { username } = await request.json()
+    const { username, password } = await request.json() // Now receiving password
     console.log("Switch user attempt to username:", username)
 
-    if (!username) {
-      return NextResponse.json({ error: "Target username is required" }, { status: 400 })
+    if (!username || !password) { // Require password
+      return NextResponse.json({ error: "Target username and password are required" }, { status: 400 })
     }
 
-    // For simplicity, we'll use a dummy password for switching.
-    // In a real app, you'd fetch the user's actual (hashed) password or use a more secure method.
-    // For this demo, we'll assume 'p@$$woRRR9' is a universal dummy password for existing users.
-    // A more robust solution would involve fetching the user's actual hashed password from the DB
-    // and comparing it, or having a dedicated admin-only switch mechanism.
-    const user = await verifyCredentials(username, 'p@$$woRRR9'); // Using dummy password for demo
+    const user = await verifyCredentials(username, password); // Pass the provided password
 
     if (!user) {
-      console.log("Invalid target username for switch")
-      return NextResponse.json({ error: "Target user not found or invalid credentials" }, { status: 404 })
+      console.log("Invalid target username or password for switch")
+      return NextResponse.json({ error: "Invalid target username or password" }, { status: 401 }) // Changed status to 401 for invalid credentials
     }
 
     await createSession(user)
