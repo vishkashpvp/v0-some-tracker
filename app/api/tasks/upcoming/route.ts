@@ -1,6 +1,8 @@
-import { NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server"
 import { sql } from "@/lib/db"
 import { getSession } from "@/lib/auth"
+import { priorityConfig, statusConfig } from "@/lib/constants" // Import constants
+import { type TaskStatus, type TaskPriority, type TaskCategory } from "@/types/task" // Import types
 
 export async function GET() {
   try {
@@ -9,31 +11,27 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Calculate start and end of the current week (Sunday to Saturday)
     const today = new Date()
-    const dayOfWeek = today.getDay() // 0 for Sunday, 1 for Monday, etc.
-    const startOfWeek = new Date(today)
-    startOfWeek.setDate(today.getDate() - dayOfWeek) // Go back to Sunday
-    startOfWeek.setHours(0, 0, 0, 0)
+    const nextSevenDays = new Date()
+    nextSevenDays.setDate(today.getDate() + 7)
 
-    const endOfWeek = new Date(startOfWeek)
-    endOfWeek.setDate(startOfWeek.getDate() + 6) // Go forward to Saturday
-    endOfWeek.setHours(23, 59, 59, 999)
+    // Format dates for SQL comparison (YYYY-MM-DD)
+    const todayFormatted = today.toISOString().split('T')[0]
+    const nextSevenDaysFormatted = nextSevenDays.toISOString().split('T')[0]
 
     let upcomingTasks
-
     if (session.role === 'admin') {
-      // Admin sees all approved upcoming tasks
+      // Admin sees all upcoming tasks that are not deleted and not completed
       upcomingTasks = await sql`
         SELECT id, title, description, status, priority, category, 
                due_date, created_at, 
                updated_at, approval_status, requested_by, approved_by, approved_at,
                is_deleted, deleted_at
         FROM tasks 
-        WHERE approval_status = 'approved' 
+        WHERE due_date >= ${todayFormatted}::date 
+          AND due_date <= ${nextSevenDaysFormatted}::date
           AND is_deleted = FALSE
-          AND due_date >= ${startOfWeek.toISOString().split('T')[0]}::date
-          AND due_date <= ${endOfWeek.toISOString().split('T')[0]}::date
+          AND status != 'completed'
         ORDER BY due_date ASC, priority DESC
       `
     } else {
@@ -44,21 +42,28 @@ export async function GET() {
                updated_at, approval_status, requested_by, approved_by, approved_at,
                is_deleted, deleted_at
         FROM tasks 
-        WHERE (approval_status = 'approved' AND requested_by = ${session.username})
-           OR (approval_status = 'pending' AND requested_by = ${session.username})
+        WHERE due_date >= ${todayFormatted}::date 
+          AND due_date <= ${nextSevenDaysFormatted}::date
           AND is_deleted = FALSE
-          AND due_date >= ${startOfWeek.toISOString().split('T')[0]}::date
-          AND due_date <= ${endOfWeek.toISOString().split('T')[0]}::date
+          AND status != 'completed'
+          AND (approval_status = 'approved' OR (approval_status = 'pending' AND requested_by = ${session.username}))
         ORDER BY due_date ASC, priority DESC
       `
     }
 
-    return NextResponse.json(upcomingTasks)
+    // Map tasks to ensure consistent types and potentially add display labels
+    const formattedTasks = upcomingTasks.map(task => ({
+      ...task,
+      priorityLabel: (priorityConfig as any)[task.priority as TaskPriority]?.label || task.priority,
+      statusLabel: (statusConfig as any)[task.status as TaskStatus]?.label || task.status,
+    }));
+
+    return NextResponse.json(formattedTasks)
   } catch (error: any) {
     console.error("Error fetching upcoming tasks:", error)
     if (error.message && error.message.includes('relation "tasks" does not exist')) {
       return NextResponse.json({ error: "Database setup incomplete: 'tasks' table not found. Please run the setup SQL script." }, { status: 500 })
     }
-    return NextResponse.json({ error: "Internal server error fetching upcoming tasks" }, { status: 500 })
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
