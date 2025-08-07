@@ -365,6 +365,7 @@ export default function FrontendTracker() {
   }
 
   const handleTaskApproval = async (taskId: number, action: 'approve' | 'reject') => {
+    console.log(`Client: Attempting to ${action} task ID: ${taskId}`);
     try {
       const response = await fetch("/api/tasks/approve", {
         method: "POST",
@@ -375,16 +376,18 @@ export default function FrontendTracker() {
 
       if (!response.ok) {
         const errorData = await response.json();
+        console.error(`Client: Failed to ${action} task. Server response:`, errorData);
         throw new Error(errorData.error || "Failed to process approval");
       }
 
+      console.log(`Client: Task ${action}ed successfully. Refreshing data.`);
       // Refresh data
       fetchTasks()
       
       setError("")
     } catch (error: any) {
-      setError(`Failed to ${action} task`)
-      console.error(`Error ${action}ing task:`, error)
+      setError(error.message || `Failed to ${action} task`)
+      console.error(`Client: Error ${action}ing task:`, error)
     }
   }
 
