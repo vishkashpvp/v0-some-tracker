@@ -47,8 +47,9 @@ CREATE TABLE IF NOT EXISTS task_deletion_requests (
 -- Insert admin users with actual passwords (for initial setup)
 -- In a real application, these passwords should be securely hashed.
 INSERT INTO admin_users (username, password_hash, role) VALUES
-('vishkash', 'Happine$$', 'admin'),
-('veeru', 'p@$$woRRR9', 'user')
+('vishkash', 'p@$$woRRR9', 'admin'), -- Standardized password
+('veeru', 'p@$$woRRR9', 'user'),     -- Standardized password
+('user3', 'p@$$woRRR9', 'user')      -- New user with standardized password
 ON CONFLICT (username) DO NOTHING;
 
 -- Insert system settings including delete PIN
