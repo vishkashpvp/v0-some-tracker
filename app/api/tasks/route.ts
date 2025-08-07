@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
       )
       VALUES (
         ${title}, ${description}, ${priority}, ${category}, 
-        ${dueDate || null}, ${approvalStatus}, ${session.username},
+        ${dueDate || new Date().toISOString().split('T')[0]}, ${approvalStatus}, ${session.username},
         ${approvedBy}, ${approvedAt}, 'todo', FALSE
       )
       RETURNING id, title, description, status, priority, category, 
