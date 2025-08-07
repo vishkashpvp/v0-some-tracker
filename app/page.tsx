@@ -300,62 +300,58 @@ export default function FrontendTracker() {
 
         {/* Admin Tabs */}
         {session?.role === 'admin' && (
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex space-x-1 bg-muted rounded-lg p-1">
-                <button
-                  onClick={() => setActiveTab('tasks')}
-                  className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-                    activeTab === 'tasks'
-                      ? 'bg-background text-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  All Tasks ({tasks.filter(t => !t.is_deleted && t.status !== 'completed').length})
-                </button>
-                <button
-                  onClick={() => setActiveTab('pending')}
-                  className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-                    activeTab === 'pending'
-                      ? 'bg-background text-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  Pending Approval ({pendingTasks.length})
-                </button>
-                <button
-                  onClick={() => setActiveTab('deletion-requests')}
-                  className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-                    activeTab === 'deletion-requests'
-                      ? 'bg-background text-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  Deletion Requests ({deletionRequests.length})
-                </button>
-                <button
-                  onClick={() => setActiveTab('completed')}
-                  className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-                    activeTab === 'completed'
-                      ? 'bg-background text-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  Completed Tasks ({completedTasks.length})
-                </button>
-                <button
-                  onClick={() => setActiveTab('deleted')}
-                  className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-                    activeTab === 'deleted'
-                      ? 'bg-background text-foreground shadow-sm'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  Deleted Tasks ({deletedTasks.length})
-                </button>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="flex space-x-1 bg-muted rounded-lg p-1">
+            <button
+              onClick={() => setActiveTab('tasks')}
+              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                activeTab === 'tasks'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              All Tasks ({tasks.filter(t => !t.is_deleted && t.status !== 'completed').length})
+            </button>
+            <button
+              onClick={() => setActiveTab('pending')}
+              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                activeTab === 'pending'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Pending Approval ({pendingTasks.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('deletion-requests')}
+              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                activeTab === 'deletion-requests'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Deletion Requests ({deletionRequests.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('completed')}
+              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                activeTab === 'completed'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Completed Tasks ({completedTasks.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('deleted')}
+              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
+                activeTab === 'deleted'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Deleted Tasks ({deletedTasks.length})
+            </button>
+          </div>
         )}
 
         {/* Render content based on active tab */}
@@ -403,6 +399,8 @@ export default function FrontendTracker() {
               </Card>
             </div>
             
+            
+
             {/* Filters */}
             <Card>
               <CardHeader>
