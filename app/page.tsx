@@ -24,6 +24,9 @@ import { TaskCard } from "@/components/task-card"
 import { type Task, type TaskStatus, type DeletionRequest } from "@/types/task"
 import { statusConfig, priorityConfig, categoryConfig } from "@/lib/constants"
 
+// Add the import for Badge
+import { Badge } from "@/components/ui/badge"
+
 export default function FrontendTracker() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
