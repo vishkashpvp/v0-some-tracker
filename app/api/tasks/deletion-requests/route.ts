@@ -33,6 +33,17 @@ export async function POST(request: NextRequest) {
 
     const { taskId, reason } = await request.json()
 
+    // Fetch the task to check its status
+    const task = await sql`
+      SELECT status FROM tasks WHERE id = ${taskId}
+    `
+    if (task.length === 0) {
+      return NextResponse.json({ error: "Task not found" }, { status: 404 })
+    }
+    if (task[0].status === 'completed') {
+      return NextResponse.json({ error: "Completed tasks cannot be requested for deletion." }, { status: 403 });
+    }
+
     if (session.role === 'admin') {
       // Admin can delete directly (soft delete)
       await sql`UPDATE tasks SET is_deleted = TRUE, deleted_at = CURRENT_TIMESTAMP WHERE id = ${taskId}`

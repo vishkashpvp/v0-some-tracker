@@ -12,17 +12,34 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     const requestId = Number.parseInt(params.id)
     const { action } = await request.json() // 'approve' or 'reject'
 
-    if (action === 'approve') {
-      // Get the task_id from the request
-      const requestData = await sql`
-        SELECT task_id FROM task_deletion_requests WHERE id = ${requestId}
-      `
-      
-      if (requestData.length === 0) {
-        return NextResponse.json({ error: "Request not found" }, { status: 404 })
-      }
+    // Get the task_id from the request
+    const requestData = await sql`
+      SELECT task_id FROM task_deletion_requests WHERE id = ${requestId}
+    `
+    
+    if (requestData.length === 0) {
+      return NextResponse.json({ error: "Request not found" }, { status: 404 })
+    }
 
-      const taskId = requestData[0].task_id
+    const taskId = requestData[0].task_id
+
+    // Fetch the current task to check its status and updated_at timestamp
+    const currentTask = await sql`
+      SELECT status, updated_at FROM tasks WHERE id = ${taskId}
+    `
+    if (currentTask.length === 0) {
+      return NextResponse.json({ error: "Task associated with request not found" }, { status: 404 })
+    }
+
+    const taskStatus = currentTask[0].status;
+    const taskUpdatedAt = new Date(currentTask[0].updated_at);
+    const fifteenMinutes = 15 * 60 * 1000; // 15 minutes in milliseconds
+
+    if (action === 'approve') {
+      // If task is completed and more than 15 minutes have passed since last update, prevent deletion
+      if (taskStatus === 'completed' && (new Date().getTime() - taskUpdatedAt.getTime()) > fifteenMinutes) {
+        return NextResponse.json({ error: "Cannot approve deletion for a locked completed task." }, { status: 403 });
+      }
 
       // Soft delete the task and update the request
       await sql`UPDATE tasks SET is_deleted = TRUE, deleted_at = CURRENT_TIMESTAMP WHERE id = ${taskId}`

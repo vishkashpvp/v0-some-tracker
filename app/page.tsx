@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { CalendarDays, Plus, Search, Filter, BarChart3, CheckCircle2, Circle, AlertCircle, LogOut, Heart, Trash2, User } from 'lucide-react' // Removed Clock and Timer icons
+import { CalendarDays, Plus, Search, Filter, BarChart3, CheckCircle2, Circle, AlertCircle, LogOut, Heart, Trash2, User, ChevronDown } from 'lucide-react' // Added ChevronDown for dropdown
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -25,6 +25,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { PinInput } from "@/components/pin-input"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu" // Import DropdownMenu components
 
 type TaskStatus = "todo" | "in-progress" | "review" | "completed"
 type TaskPriority = "low" | "medium" | "high" | "urgent"
@@ -48,7 +49,7 @@ interface Task {
 
 const statusConfig = {
   todo: { label: "To Do", color: "bg-gray-500", icon: Circle },
-  "in-progress": { label: "In Progress", color: "bg-blue-500", icon: Circle }, // Changed to Circle as Timer is removed
+  "in-progress": { label: "In Progress", color: "bg-blue-500", icon: Circle },
   review: { label: "Review", color: "bg-yellow-500", icon: AlertCircle },
   completed: { label: "Completed", color: "bg-green-500", icon: CheckCircle2 },
 }
@@ -68,6 +69,17 @@ const categoryConfig = {
   optimization: { label: "Optimization", color: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200" },
   "bug-fix": { label: "Bug Fix", color: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200" },
 }
+
+// Helper to check if a completed task is locked (after 15 minutes)
+const isTaskLocked = (task: Task): boolean => {
+  if (task.status !== 'completed') {
+    return false;
+  }
+  const fifteenMinutes = 15 * 60 * 1000; // 15 minutes in milliseconds
+  const updatedAtTime = new Date(task.updated_at).getTime();
+  const currentTime = new Date().getTime();
+  return (currentTime - updatedAtTime) > fifteenMinutes;
+};
 
 export default function FrontendTracker() {
   const [tasks, setTasks] = useState<Task[]>([])
@@ -212,7 +224,12 @@ export default function FrontendTracker() {
     const matchesStatus = statusFilter === "all" || task.status === statusFilter
     const matchesPriority = priorityFilter === "all" || task.priority === priorityFilter
 
-    return matchesSearch && matchesStatus && matchesPriority
+    // For regular users, ensure pending tasks are shown if not filtered out by status/priority
+    if (session?.role !== 'admin' && task.approval_status === 'pending' && task.requested_by === session?.username) {
+      return matchesSearch && matchesStatus && matchesPriority;
+    }
+    // For admins, or approved tasks for users, ensure they are not deleted
+    return matchesSearch && matchesStatus && matchesPriority && !task.is_deleted;
   })
 
   const getTaskStats = () => {
@@ -242,12 +259,15 @@ export default function FrontendTracker() {
         body: JSON.stringify({ status: newStatus }),
       })
 
-      if (!response.ok) throw new Error("Failed to update task")
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to update task");
+      }
 
       const updatedTask = await response.json()
       setTasks(tasks.map((task) => (task.id === taskId ? updatedTask : task)))
-    } catch (error) {
-      setError("Failed to update task")
+    } catch (error: any) {
+      setError(error.message || "Failed to update task")
       console.error("Error updating task:", error)
     }
   }
@@ -364,7 +384,10 @@ export default function FrontendTracker() {
         body: JSON.stringify({ taskId, reason }),
       })
 
-      if (!response.ok) throw new Error("Failed to create deletion request")
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to create deletion request");
+      }
 
       const result = await response.json()
       setError("")
@@ -376,8 +399,8 @@ export default function FrontendTracker() {
       if (session?.role === 'admin') {
         fetchTasks()
       }
-    } catch (error) {
-      setError("Failed to create deletion request")
+    } catch (error: any) {
+      setError(error.message || "Failed to create deletion request")
       console.error("Error creating deletion request:", error)
     }
   }
@@ -390,13 +413,16 @@ export default function FrontendTracker() {
         body: JSON.stringify({ action }),
       })
 
-      if (!response.ok) throw new Error("Failed to process deletion request")
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to process deletion request");
+      }
 
       // Refresh data
       fetchTasks()
       setError("")
-    } catch (error) {
-      setError(`Failed to ${action} deletion request`)
+    } catch (error: any) {
+      setError(error.message || `Failed to ${action} deletion request`)
       console.error(`Error ${action}ing deletion request:`, error)
     }
   }
@@ -441,8 +467,8 @@ export default function FrontendTracker() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-4">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-background p-4 flex flex-col">
+      <div className="max-w-7xl mx-auto w-full space-y-6 flex-1">
         {error && (
           <Alert variant="destructive">
             <AlertDescription>{error}</AlertDescription>
@@ -458,19 +484,25 @@ export default function FrontendTracker() {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Heart className="w-4 h-4 text-red-500 fill-red-500" />
-              <span>{session?.username || "User"}</span>
-            </div>
-            <ThemeToggle />
-            <Button variant="outline" size="icon" onClick={() => router.push("/profile")}>
-              <User className="w-4 h-4" />
-              <span className="sr-only">Profile</span>
-            </Button>
-            <Button variant="outline" size="icon" onClick={handleLogout}>
-              <LogOut className="w-4 h-4" />
-              <span className="sr-only">Logout</span>
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="flex items-center gap-2 px-3">
+                  <Heart className="w-4 h-4 text-red-500 fill-red-500" />
+                  <span>{session?.username || "User"}</span>
+                  <ChevronDown className="ml-1 h-4 w-4 text-muted-foreground" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => router.push("/profile")}>
+                  <User className="w-4 h-4 mr-2" />
+                  Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Logout
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
@@ -528,7 +560,7 @@ export default function FrontendTracker() {
         {(session?.role !== 'admin' || activeTab === 'tasks') && (
           <>
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"> {/* Changed to 3 columns */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">
@@ -720,6 +752,7 @@ export default function FrontendTracker() {
                     const StatusIcon = statusConfig[task.status].icon
                     const isOverdue = new Date(task.due_date) < new Date() && task.status !== "completed"
                     const isPending = task.approval_status === 'pending'
+                    const locked = isTaskLocked(task);
 
                     return (
                       <div
@@ -727,6 +760,7 @@ export default function FrontendTracker() {
                         className={`border rounded-lg p-4 transition-colors hover:bg-muted/50 ${
                           isOverdue ? "border-destructive bg-destructive/10" : 
                           isPending ? "border-yellow-500 bg-yellow-50 dark:bg-yellow-950" : 
+                          locked ? "border-gray-300 bg-gray-100 dark:bg-gray-900 opacity-70" :
                           "border-border"
                         }`}
                       >
@@ -747,6 +781,11 @@ export default function FrontendTracker() {
                                   Pending Approval
                                 </Badge>
                               )}
+                              {locked && (
+                                <Badge variant="secondary" className="text-xs">
+                                  Locked
+                                </Badge>
+                              )}
                             </div>
 
                             <p className="text-muted-foreground text-sm">{task.description}</p>
@@ -760,7 +799,7 @@ export default function FrontendTracker() {
                               </Badge>
                               <div className="flex items-center gap-1 text-sm text-muted-foreground">
                                 <CalendarDays className="h-4 w-4" />
-                                {task.due_date}
+                                {new Date(task.due_date).toLocaleDateString()} {/* Formatted due date */}
                               </div>
                             </div>
                           </div>
@@ -770,6 +809,7 @@ export default function FrontendTracker() {
                               <Select
                                 value={task.status}
                                 onValueChange={(value: TaskStatus) => updateTaskStatus(task.id, value)}
+                                disabled={locked} // Disable if locked
                               >
                                 <SelectTrigger className="w-[130px]">
                                   <SelectValue />
@@ -788,6 +828,7 @@ export default function FrontendTracker() {
                                 size="sm"
                                 variant="outline"
                                 onClick={() => openDeletionDialog(task)}
+                                disabled={task.status === 'completed' || locked} // Disable if completed or locked
                               >
                                 Request Deletion
                               </Button>
@@ -991,7 +1032,7 @@ export default function FrontendTracker() {
                           </Badge>
                           <div className="flex items-center gap-1 text-sm text-muted-foreground">
                             <CalendarDays className="h-4 w-4" />
-                            {task.due_date}
+                            {new Date(task.due_date).toLocaleDateString()}
                           </div>
                           {task.deleted_at && (
                             <div className="flex items-center gap-1 text-sm text-muted-foreground">
@@ -1043,6 +1084,20 @@ export default function FrontendTracker() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Footer />
     </div>
   )
+}
+
+// New Footer component
+function Footer() {
+  return (
+    <footer className="mt-8 py-4 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-4 max-w-7xl mx-auto">
+      <div className="text-sm text-muted-foreground">
+        &copy; {new Date().getFullYear()} Frontend Development Tracker. All rights reserved.
+      </div>
+      <ThemeToggle />
+    </footer>
+  );
 }

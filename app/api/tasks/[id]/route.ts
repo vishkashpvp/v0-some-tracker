@@ -9,8 +9,26 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const { status } = await request.json() // Removed actualHours
+    const { status } = await request.json()
     const taskId = Number.parseInt(params.id)
+
+    // Fetch the current task to check its status and updated_at timestamp
+    const currentTask = await sql`
+      SELECT status, updated_at FROM tasks WHERE id = ${taskId}
+    `
+
+    if (currentTask.length === 0) {
+      return NextResponse.json({ error: "Task not found" }, { status: 404 })
+    }
+
+    const taskStatus = currentTask[0].status;
+    const taskUpdatedAt = new Date(currentTask[0].updated_at);
+    const fifteenMinutes = 15 * 60 * 1000; // 15 minutes in milliseconds
+
+    // If task is completed and more than 15 minutes have passed since last update, prevent modification
+    if (taskStatus === 'completed' && (new Date().getTime() - taskUpdatedAt.getTime()) > fifteenMinutes) {
+      return NextResponse.json({ error: "Completed tasks cannot be modified after 15 minutes." }, { status: 403 });
+    }
 
     const result = await sql`
       UPDATE tasks 
@@ -42,6 +60,17 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
     }
 
     const taskId = Number.parseInt(params.id)
+
+    // Fetch the current task to check its status
+    const currentTask = await sql`
+      SELECT status FROM tasks WHERE id = ${taskId}
+    `
+    if (currentTask.length === 0) {
+      return NextResponse.json({ error: "Task not found" }, { status: 404 })
+    }
+    if (currentTask[0].status === 'completed') {
+      return NextResponse.json({ error: "Completed tasks cannot be deleted." }, { status: 403 });
+    }
 
     // Perform soft delete
     const result = await sql`
