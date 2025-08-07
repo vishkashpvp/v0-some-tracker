@@ -467,7 +467,7 @@ export default function FrontendTracker() {
               {session?.role === 'admin' ? 'Admin Dashboard - Manage tasks and approvals' : 'Track progress and manage your tasks'}
             </p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3 justify-end"> {/* Added flex-wrap and justify-end */}
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Heart className="w-4 h-4 text-red-500 fill-red-500" />
               <span>{session?.username || "User"} ({session?.role === 'admin' ? 'Admin' : 'User'})</span>

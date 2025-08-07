@@ -87,23 +87,25 @@ export default function ProfilePage() {
           <CardTitle className="text-2xl font-bold">User Profile</CardTitle>
           <CardDescription>Manage your account settings</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="flex items-center justify-between border-b pb-4">
-            <div className="flex items-center gap-2">
-              <User className="h-5 w-5 text-muted-foreground" />
-              <span className="text-lg font-medium">Username:</span>
+        <CardContent className="space-y-6 p-6"> {/* Added p-6 for consistent padding */}
+          <div className="space-y-4"> {/* Group user info */}
+            <div className="flex items-center justify-between pb-2 border-b border-border"> {/* Consistent border */}
+              <div className="flex items-center gap-2">
+                <User className="h-5 w-5 text-muted-foreground" />
+                <span className="text-lg font-medium">Username:</span>
+              </div>
+              <span className="text-lg text-foreground">{username}</span>
             </div>
-            <span className="text-lg text-foreground">{username}</span>
-          </div>
-          <div className="flex items-center justify-between border-b pb-4">
-            <div className="flex items-center gap-2">
-              <KeyRound className="h-5 w-5 text-muted-foreground" />
-              <span className="text-lg font-medium">Role:</span>
+            <div className="flex items-center justify-between pb-2 border-b border-border"> {/* Consistent border */}
+              <div className="flex items-center gap-2">
+                <KeyRound className="h-5 w-5 text-muted-foreground" />
+                <span className="text-lg font-medium">Role:</span>
+              </div>
+              <span className="text-lg text-foreground capitalize">{role}</span>
             </div>
-            <span className="text-lg text-foreground capitalize">{role}</span>
           </div>
 
-          <h2 className="text-xl font-bold mt-6 mb-4">Change Password</h2>
+          <h2 className="text-xl font-bold pt-4 border-t border-border">Change Password</h2> {/* Added border-t and pt-4 */}
           <form onSubmit={handleChangePassword} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="current-password">Current Password</Label>
