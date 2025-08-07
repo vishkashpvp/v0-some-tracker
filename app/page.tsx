@@ -160,7 +160,7 @@ export default function FrontendTracker() {
           console.error("Non-JSON response from /api/tasks/pending:", pendingResponse.status, errorText)
           setError("Failed to load pending tasks due to unexpected server response. Check server logs for /api/tasks/pending.")
         } else if (!pendingResponse.ok) {
-          const errorData = await pendingResponse.json()
+          const errorData = await pendingResponse.json() // Added await
           console.error("API error response for pending tasks:", errorData)
           setError(errorData.error || "Failed to load pending tasks due to server error.")
         } else {
@@ -176,7 +176,7 @@ export default function FrontendTracker() {
           console.error("Non-JSON response from /api/tasks/deletion-requests:", deletionResponse.status, errorText)
           setError("Failed to load deletion requests due to unexpected server response. Check server logs for /api/tasks/deletion-requests.")
         } else if (!deletionResponse.ok) {
-          const errorData = await deletionResponse.json()
+          const errorData = await deletionResponse.json() // Added await
           console.error("API error response for deletion requests:", errorData)
           setError(errorData.error || "Failed to load deletion requests due to server error.")
         } else {
@@ -192,7 +192,7 @@ export default function FrontendTracker() {
           console.error("Non-JSON response from /api/tasks/deleted:", deletedResponse.status, errorText)
           setError("Failed to load deleted tasks due to unexpected server response. Check server logs for /api/tasks/deleted.")
         } else if (!deletedResponse.ok) {
-          const errorData = deletedResponse.json()
+          const errorData = await deletedResponse.json() // Added await
           console.error("API error response for deleted tasks:", errorData)
           setError(errorData.error || "Failed to load deleted tasks due to server error.")
         } else {

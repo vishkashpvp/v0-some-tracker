@@ -20,7 +20,8 @@ export async function GET() {
     `
     return NextResponse.json(deletedTasks)
   } catch (error) {
-    console.error("Error fetching deleted tasks:", error)
+    console.error("Error fetching deleted tasks:", error); // Added console.log
+    console.log("Returning 500 error from /api/tasks/deleted"); // Added console.log
     return NextResponse.json({ error: "Internal server error fetching deleted tasks" }, { status: 500 })
   }
 }
