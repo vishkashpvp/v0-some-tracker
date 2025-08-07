@@ -22,6 +22,7 @@ export async function POST(request: NextRequest) {
       `
       return NextResponse.json(result[0])
     } else if (action === 'reject') {
+      // Soft delete the task when rejected
       const result = await sql`
         UPDATE tasks
         SET is_deleted = TRUE, deleted_at = CURRENT_TIMESTAMP

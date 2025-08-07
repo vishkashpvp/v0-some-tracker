@@ -20,7 +20,8 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       WHERE id = ${taskId}
       RETURNING id, title, description, status, priority, category, 
                estimated_hours, actual_hours, due_date, created_at, 
-               updated_at, approval_status, requested_by, approved_by, approved_at
+               updated_at, approval_status, requested_by, approved_by, approved_at,
+               is_deleted, deleted_at
     `
 
     if (result.length === 0) {
@@ -43,6 +44,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
 
     const taskId = Number.parseInt(params.id)
 
+    // Perform soft delete
     const result = await sql`
       UPDATE tasks
       SET is_deleted = TRUE, deleted_at = CURRENT_TIMESTAMP

@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { CalendarDays, Clock, Plus, Search, Filter, BarChart3, CheckCircle2, Circle, AlertCircle, Timer, LogOut, Heart, Trash2 } from 'lucide-react'
+import { CalendarDays, Clock, Plus, Search, Filter, BarChart3, CheckCircle2, Circle, AlertCircle, Timer, LogOut, Heart, Trash2, User } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -631,6 +631,10 @@ export default function FrontendTracker() {
                 </DialogContent>
               </Dialog>
             )}
+            <Button variant="outline" onClick={() => router.push("/profile")}>
+              <User className="w-4 h-4 mr-2" />
+              Profile
+            </Button>
             <Button variant="outline" onClick={handleLogout}>
               <LogOut className="w-4 h-4 mr-2" />
               Logout
@@ -695,13 +699,17 @@ export default function FrontendTracker() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Tasks</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    {session?.role === 'admin' ? 'Pending Tasks' : 'My Active Tasks'}
+                  </CardTitle>
                   <BarChart3 className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{stats.total}</div>
+                  <div className="text-2xl font-bold">
+                    {session?.role === 'admin' ? pendingTasks.length : tasks.filter(t => !t.is_deleted && t.approval_status === 'approved').length}
+                  </div>
                   <p className="text-xs text-muted-foreground">
-                    {stats.completed} completed, {stats.inProgress} in progress
+                    {session?.role === 'admin' ? 'Tasks awaiting approval' : 'Tasks not deleted or pending approval'}
                   </p>
                 </CardContent>
               </Card>

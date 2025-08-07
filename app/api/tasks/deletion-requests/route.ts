@@ -13,7 +13,7 @@ export async function GET() {
       SELECT dr.*, t.title, t.description
       FROM task_deletion_requests dr
       JOIN tasks t ON dr.task_id = t.id
-      WHERE dr.status = 'pending'
+      WHERE dr.status = 'pending' AND t.is_deleted = FALSE
       ORDER BY dr.created_at DESC
     `
 
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     const { taskId, reason } = await request.json()
 
     if (session.role === 'admin') {
-      // Admin can delete directly
+      // Admin can delete directly (soft delete)
       await sql`UPDATE tasks SET is_deleted = TRUE, deleted_at = CURRENT_TIMESTAMP WHERE id = ${taskId}`
       return NextResponse.json({ success: true, message: "Task deleted" })
     } else {

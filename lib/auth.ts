@@ -118,3 +118,29 @@ export async function isAdmin(): Promise<boolean> {
   const session = await getSession()
   return session?.role === 'admin'
 }
+
+// New function to change user password
+export async function changePassword(userId: number, currentPassword: string, newPassword: string): Promise<boolean> {
+  try {
+    // In a real application, you would fetch the user's hashed password from the database
+    // and compare it with the currentPassword using a secure hashing library (e.g., bcrypt).
+    // Then, hash the newPassword and update it in the database.
+
+    // For this example, we'll simulate by checking against the hardcoded VALID_USERS map.
+    // Note: Changes to VALID_USERS here are ephemeral and won't persist across server restarts.
+    const user = await sql`SELECT username FROM admin_users WHERE id = ${userId}`
+    if (user.length === 0) return false
+
+    const username = user[0].username
+    if (VALID_USERS[username] === currentPassword) {
+      VALID_USERS[username] = newPassword; // Update hardcoded map (ephemeral)
+      // In a real app, you'd update the database here:
+      // await sql`UPDATE admin_users SET password_hash = ${hashedNewPassword} WHERE id = ${userId}`
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error("Error changing password:", error);
+    return false;
+  }
+}

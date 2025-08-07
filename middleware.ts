@@ -23,7 +23,7 @@ export async function middleware(request: NextRequest) {
 
   // Redirect to /login if not authenticated and trying to access protected routes
   // The main dashboard '/' and all '/api/tasks' routes are protected.
-  if (pathname === "/" || pathname.startsWith("/api/tasks")) {
+  if (pathname === "/" || pathname.startsWith("/api/tasks") || pathname.startsWith("/profile")) { // Added /profile to protected routes
     if (!isAuthenticated) {
       // For API routes, return 401. For the main page, redirect to login.
       if (pathname.startsWith("/api/tasks")) {
