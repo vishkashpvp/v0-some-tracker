@@ -15,7 +15,6 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 // Import new components and utilities
-import { UpcomingTasksWidget } from "@/components/upcoming-tasks-widget"
 import { AddTaskDialog } from "@/components/add-task-dialog"
 import { DeleteAllTasksDialog } from "@/components/delete-all-tasks-dialog"
 import { RequestDeletionDialog } from "@/components/request-deletion-dialog"
@@ -404,8 +403,6 @@ export default function FrontendTracker() {
               </Card>
             </div>
             
-            <UpcomingTasksWidget />
-
             {/* Filters */}
             <Card>
               <CardHeader>
